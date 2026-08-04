@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>morpho — maquette s07-measurement-charts</title>
+<style>
+/* ------------------------------------------------------------------
+   Tokens — copiés de src/app/globals.css (design system morpho).
+   Aucune valeur inventée : chaque variable ci-dessous existe déjà.
+   ------------------------------------------------------------------ */
+:root,
+.theme-light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --progress-favorable: oklch(0.55 0.12 152);
+  --progress-adverse: var(--destructive);
+  --radius: 0.625rem;
+  --label-min-size: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --progress-favorable: oklch(0.7 0.14 152);
+  }
+}
+
+/* Forçage explicite, pour la section de vérification bi-thème */
+.theme-dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --progress-favorable: oklch(0.7 0.14 152);
+}
+
+/* Rayons dérivés (paliers du preset) */
+:root { --radius-sm: calc(var(--radius) * 0.6); --radius-md: calc(var(--radius) * 0.8); --radius-lg: var(--radius); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  /* La maquette utilise la police système : Geist (--font-sans) n'est pas
+     embarquable sans asset externe. L'implémentation utilise --font-sans. */
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: oklch(0.97 0 0);
+  color: oklch(0.145 0 0);
+  padding: 24px 16px 80px;
+  line-height: 1.45;
+}
+@media (prefers-color-scheme: dark) {
+  body { background: oklch(0.205 0 0); color: oklch(0.985 0 0); }
+}
+
+/* ---------- chrome de la maquette (hors design system) ---------- */
+.doc-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
+.doc-sub { font-size: 0.8125rem; opacity: 0.7; margin-bottom: 28px; max-width: 60ch; }
+.state { margin-bottom: 36px; }
+.state > h2 { font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.65; margin-bottom: 4px; }
+.state > p.state-note { font-size: 0.8125rem; opacity: 0.7; margin-bottom: 10px; max-width: 62ch; }
+.pair { display: flex; flex-wrap: wrap; gap: 20px; }
+
+/* ---------- viewport iOS 375 px ---------- */
+.phone {
+  width: 375px;
+  max-width: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid oklch(0.145 0 0 / 25%);
+  border-radius: var(--radius-lg);
+  overflow: hidden;   /* si quelque chose déborde ici, le critère 7 est violé */
+  position: relative;
+}
+
+/* ---------- écran ---------- */
+.screen { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+.topbar { display: flex; align-items: center; gap: 8px; }
+.back {
+  font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none;
+  padding: 4px 8px; margin-left: -8px; border-radius: var(--radius-sm);
+}
+.screen h1 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; }
+
+/* Label + Select (shadcn `label`, `select`) */
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label { font-size: 0.875rem; font-weight: 500; }
+.select-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; min-width: 0; height: 40px; padding: 0 12px;
+  border: 1px solid var(--input); border-radius: var(--radius-md);
+  background: var(--background); color: var(--foreground);
+  font-size: 0.9375rem; font-family: inherit; text-align: left;
+}
+.select-trigger .chev { color: var(--muted-foreground); font-size: 0.75rem; }
+.select-trigger.focused { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* Carte du graphe (shadcn `card`) */
+.card {
+  background: var(--card); color: var(--card-foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+  min-width: 0;
+}
+.meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.meta .lead { font-size: 0.75rem; color: var(--muted-foreground); }
+.meta .value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; font-size: 1.375rem; font-weight: 600; letter-spacing: -0.02em; }
+.meta .when { font-size: 0.75rem; color: var(--muted-foreground); }
+.note { font-size: 0.75rem; color: var(--muted-foreground); }
+
+/* Graphe : viewBox 320 ≈ largeur réelle du contenu à 375 px → 1 unité ≈ 1 px,
+   donc font-size 12 dans le SVG = 12 px réels (plancher --label-min-size). */
+.chart { width: 100%; min-width: 0; display: block; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .axis { stroke: var(--border); stroke-width: 1; }
+.chart .tick { fill: var(--muted-foreground); font-size: 12px; font-family: inherit; }
+.chart .line { fill: none; stroke: var(--foreground); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chart .dot { fill: var(--background); stroke: var(--foreground); stroke-width: 2; }
+.chart .dot-active { fill: var(--foreground); stroke: var(--background); stroke-width: 2; }
+.chart .cursor { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* Tooltip (shadcn ChartTooltipContent) */
+.tooltip {
+  position: absolute; z-index: 2;
+  background: var(--popover); color: var(--popover-foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 6px 8px; min-width: 128px;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 12%);
+  font-size: 0.75rem;
+}
+.tooltip .t-label { color: var(--muted-foreground); margin-bottom: 2px; }
+.tooltip .t-row { display: flex; align-items: center; gap: 6px; }
+.tooltip .t-swatch { width: 8px; height: 8px; border-radius: 2px; background: var(--foreground); flex: none; }
+.tooltip .t-name { flex: 1; }
+.tooltip .t-value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* Empty (shadcn `empty`) */
+.empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 28px 16px; }
+.empty h3 { font-size: 0.9375rem; font-weight: 600; }
+.empty p { font-size: 0.8125rem; color: var(--muted-foreground); max-width: 30ch; }
+.empty .actions { margin-top: 4px; }
+
+/* Button (shadcn `button`) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 36px; padding: 0 14px; border: 1px solid transparent;
+  border-radius: var(--radius-md); font-size: 0.875rem; font-weight: 500;
+  font-family: inherit; background: var(--primary); color: var(--primary-foreground);
+  text-decoration: none; cursor: default;
+}
+.btn.outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+
+/* Skeleton (shadcn `skeleton`) */
+.sk { background: var(--muted); border-radius: var(--radius-sm); }
+.sk-value { height: 26px; width: 96px; }
+.sk-chart { height: 180px; width: 100%; border-radius: var(--radius-md); }
+.sk-note { height: 12px; width: 62%; }
+
+/* Popover du Select (Radix SelectContent, portalisé) */
+.select-popover {
+  position: absolute; left: 16px; right: 16px; top: 172px; z-index: 3;
+  background: var(--popover); color: var(--popover-foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 4px; box-shadow: 0 8px 24px oklch(0 0 0 / 18%);
+  max-height: 240px; overflow: auto;
+}
+.select-popover .grp-label { font-size: 0.75rem; color: var(--muted-foreground); padding: 6px 8px 4px; }
+.select-popover .item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px; border-radius: var(--radius-sm); font-size: 0.9375rem;
+}
+.select-popover .item .check { width: 14px; flex: none; color: var(--muted-foreground); }
+.select-popover .item .name { flex: 1; }
+.select-popover .item .unit { font-size: 0.75rem; color: var(--muted-foreground); }
+.select-popover .item[aria-selected="true"] { background: var(--accent); color: var(--accent-foreground); }
+.select-popover .sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+.dim { opacity: 0.4; }
+</style>
+</head>
+<body>
+
+<h1 class="doc-title">morpho — s07 · Courbes d'évolution</h1>
+<p class="doc-sub">
+  Maquette de référence, pas du code de production. Cadres à 375 px de large (iOS Safari, portrait) avec
+  <code>overflow: hidden</code> : tout ce qui déborderait du cadre est un critère 7 en échec. Les couleurs
+  proviennent exclusivement des tokens de <code>docs/design-system.md</code>. La page suit le thème système ;
+  la dernière section force les deux thèmes côte à côte.
+</p>
+
+<!-- ============================================================= 1 -->
+<section class="state">
+  <h2>1 · Succès — série complète (Poids, 7 sessions)</h2>
+  <p class="state-note">
+    Axe temporel réel : les deux sessions du 9 et du 10 février se touchent presque, celle de mars est loin.
+    Trait de la courbe en <code>--foreground</code> ; aucune couleur de progression sur cet écran.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m1">Mesure</label>
+        <button class="select-trigger" id="m1" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du poids, du 5 janvier au 30 mars 2026, de 78,6 kg à 74,1 kg, 7 mesures">
+          <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+          <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+          <line class="grid" x1="34" y1="142.7" x2="314" y2="142.7"/>
+          <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+          <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+          <text class="tick" x="28" y="146.7" text-anchor="end">74</text>
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+          <polyline class="line"
+            points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+          <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+          <circle class="dot" cx="104" cy="57.8" r="3.5"/>
+          <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+          <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+          <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+        </svg>
+
+        <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 2 -->
+<section class="state">
+  <h2>2 · Sélecteur ouvert — 11 séries</h2>
+  <p class="state-note">
+    Les 10 mesures suivies plus l'IMC, en deux groupes (<code>SelectGroup</code> + <code>SelectLabel</code>).
+    Le popover Radix est portalisé : il occupe la largeur du viewport moins la marge, jamais plus.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m2">Mesure</label>
+        <button class="select-trigger focused" id="m2" aria-haspopup="listbox" aria-expanded="true">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card dim">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+        <svg class="chart" viewBox="0 0 320 180" aria-hidden="true">
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <polyline class="line"
+            points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="select-popover" role="listbox" aria-label="Mesure">
+      <div class="grp-label">Poids et indices</div>
+      <div class="item" role="option" aria-selected="true"><span class="check">&#10003;</span><span class="name">Poids</span><span class="unit">kg</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">IMC</span><span class="unit"></span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Masse grasse</span><span class="unit">%</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Masse musculaire</span><span class="unit">%</span></div>
+      <div class="sep"></div>
+      <div class="grp-label">Mensurations</div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Épaules</span><span class="unit">cm</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Poitrine</span><span class="unit">cm</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Biceps</span><span class="unit">cm</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Taille</span><span class="unit">cm</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Hanches</span><span class="unit">cm</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Cuisse</span><span class="unit">cm</span></div>
+      <div class="item" role="option"><span class="check"></span><span class="name">Mollet</span><span class="unit">cm</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 3 -->
+<section class="state">
+  <h2>3 · Succès — point tapoté (tooltip)</h2>
+  <p class="state-note">
+    Critère 6. Date complète et valeur exacte avec son unité, formatées en français.
+    Le tooltip reste dans le viewport : près du bord droit, il s'aligne à droite du point.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m3">Mesure</label>
+        <button class="select-trigger" id="m3" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+        <svg class="chart" viewBox="0 0 320 180" role="img" aria-label="Courbe du poids, point du 26 janvier sélectionné : 77,2 kg">
+          <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+          <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+          <line class="grid" x1="34" y1="142.7" x2="314" y2="142.7"/>
+          <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+          <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+          <text class="tick" x="28" y="146.7" text-anchor="end">74</text>
+          <line class="cursor" x1="104" y1="10" x2="104" y2="156"/>
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+          <polyline class="line"
+            points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+          <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+          <circle class="dot-active" cx="104" cy="57.8" r="5"/>
+          <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+          <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+          <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+        </svg>
+        <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+      </div>
+    </div>
+
+    <div class="tooltip" style="left: 120px; top: 236px;">
+      <div class="t-label">26 janvier 2026</div>
+      <div class="t-row">
+        <span class="t-swatch"></span><span class="t-name">Poids</span><span class="t-value">77,2 kg</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 4 -->
+<section class="state">
+  <h2>4 · Succès — série clairsemée (Taille, mesure absente de plusieurs sessions)</h2>
+  <p class="state-note">
+    Critère 3. Aucun point n'est inventé entre le 26 janvier et le 30 mars : le segment est long
+    parce que la mesure n'a pas été reprise, et la légende le dit en toutes lettres. Les points
+    marquent les mesures réelles, rien d'autre.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m4">Mesure</label>
+        <button class="select-trigger" id="m4" aria-haspopup="listbox" aria-expanded="false">
+          <span>Taille</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">84,2 cm</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du tour de taille, 4 mesures entre le 5 janvier et le 30 mars 2026">
+          <line class="grid" x1="34" y1="10" x2="314" y2="10"/>
+          <line class="grid" x1="34" y1="68.4" x2="314" y2="68.4"/>
+          <line class="grid" x1="34" y1="126.8" x2="314" y2="126.8"/>
+          <text class="tick" x="28" y="14" text-anchor="end">89</text>
+          <text class="tick" x="28" y="72.4" text-anchor="end">87</text>
+          <text class="tick" x="28" y="130.8" text-anchor="end">85</text>
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+          <polyline class="line" points="34,24.6 57.3,42.1 104,68.4 314,150.2"/>
+          <circle class="dot" cx="34" cy="24.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="42.1" r="3.5"/>
+          <circle class="dot" cx="104" cy="68.4" r="3.5"/>
+          <circle class="dot" cx="314" cy="150.2" r="3.5"/>
+        </svg>
+        <p class="note">Seules les sessions où le tour de taille a été saisi apparaissent — 4 mesures sur 7 sessions.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 5 -->
+<section class="state">
+  <h2>5 · Succès dégradé — un seul point</h2>
+  <p class="state-note">
+    Critère 5. Le point s'affiche seul, sans courbe. Le texte dit ce que le graphe ne peut pas montrer :
+    il n'y a pas encore de tendance.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m5">Mesure</label>
+        <button class="select-trigger" id="m5" aria-haspopup="listbox" aria-expanded="false">
+          <span>Mollet</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">38,5 cm</span>
+          <span class="when">12 mars 2026</span>
+        </div>
+        <svg class="chart" viewBox="0 0 320 180" role="img" aria-label="Une seule mesure du mollet, 38,5 cm le 12 mars 2026">
+          <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+          <line class="grid" x1="34" y1="83" x2="314" y2="83"/>
+          <line class="grid" x1="34" y1="129.5" x2="314" y2="129.5"/>
+          <text class="tick" x="28" y="40.5" text-anchor="end">39</text>
+          <text class="tick" x="28" y="87" text-anchor="end">38,5</text>
+          <text class="tick" x="28" y="133.5" text-anchor="end">38</text>
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="174" y="173" text-anchor="middle">12 mars</text>
+          <circle class="dot" cx="174" cy="83" r="4"/>
+        </svg>
+        <p class="note">Une seule mesure enregistrée : pas encore de tendance à lire.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 6 -->
+<section class="state">
+  <h2>6 · Chargement</h2>
+  <p class="state-note">
+    Squelette à la forme du graphe attendu (cold start Neon ~500 ms). Jamais d'écran d'attente bloquant :
+    le titre et le sélecteur sont déjà là et déjà utilisables.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m6">Mesure</label>
+        <button class="select-trigger" id="m6" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card" aria-busy="true">
+        <div class="meta"><span class="sk sk-value"></span></div>
+        <div class="sk sk-chart"></div>
+        <div class="sk sk-note"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 7 -->
+<section class="state">
+  <h2>7 · Vide — mesure sans aucune donnée</h2>
+  <p class="state-note">
+    Critère 4 : pas d'axes nus. L'état vide remplace le graphe <em>à l'intérieur</em> de la carte —
+    le sélecteur reste visible et actionnable, pour changer de mesure sans quitter l'écran.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m7">Mesure</label>
+        <button class="select-trigger" id="m7" aria-haspopup="listbox" aria-expanded="false">
+          <span>Cuisse</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="empty">
+          <h3>Aucune mesure de cuisse</h3>
+          <p>Cette mesure n'a jamais été saisie. Ajoutez-la à votre prochaine session pour voir la courbe apparaître.</p>
+          <div class="actions"><a class="btn" href="#">Saisir une session</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 8 -->
+<section class="state">
+  <h2>8 · Vide — IMC sans taille de référence</h2>
+  <p class="state-note">
+    Variante de l'état vide : la cause n'est pas l'absence de mesure mais l'absence de taille (s04),
+    donc l'action n'est pas la même. Deux causes, deux messages, deux boutons.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m8">Mesure</label>
+        <button class="select-trigger" id="m8" aria-haspopup="listbox" aria-expanded="false">
+          <span>IMC</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="empty">
+          <h3>Taille non renseignée</h3>
+          <p>L'IMC se calcule à partir de votre taille. Renseignez-la une fois, elle s'appliquera à tout l'historique.</p>
+          <div class="actions"><a class="btn" href="#">Renseigner ma taille</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 9 -->
+<section class="state">
+  <h2>9 · Vide — aucune session enregistrée</h2>
+  <p class="state-note">
+    Cas compte neuf : aucune série n'existe, quelle que soit la mesure choisie. Le sélecteur est désactivé,
+    il n'y a rien à sélectionner.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m9">Mesure</label>
+        <button class="select-trigger" id="m9" aria-haspopup="listbox" aria-expanded="false" disabled
+                style="opacity:.5">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="empty">
+          <h3>Aucune session enregistrée</h3>
+          <p>Les courbes apparaîtront dès votre première session de mesures.</p>
+          <div class="actions"><a class="btn" href="#">Saisir ma première session</a></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 10 -->
+<section class="state">
+  <h2>10 · Erreur de chargement</h2>
+  <p class="state-note">
+    Message en clair, en français, disant quoi faire. Aucun code technique à l'écran.
+    Le réessai recharge la série sans quitter l'écran.
+  </p>
+  <div class="phone">
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="m10">Mesure</label>
+        <button class="select-trigger" id="m10" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="empty" role="alert">
+          <h3>Impossible de charger la courbe</h3>
+          <p>Les données n'ont pas pu être récupérées. Vérifiez votre connexion, puis réessayez.</p>
+          <div class="actions"><button class="btn outline">Réessayer</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================= 11 -->
+<section class="state">
+  <h2>11 · Vérification bi-thème — clair et sombre forcés</h2>
+  <p class="state-note">
+    Le trait est en <code>--foreground</code> : encre sur fond clair, blanc cassé sur fond sombre.
+    Les <code>--chart-1..5</code> du preset sont volontairement inutilisés (gris pensés pour des aires,
+    <code>--chart-1</code> quasi invisible en trait).
+  </p>
+  <div class="pair">
+    <div class="phone theme-light">
+      <div class="screen">
+        <h1>Évolution</h1>
+        <div class="field">
+          <label for="m11a">Mesure</label>
+          <button class="select-trigger" id="m11a"><span>Poids</span><span class="chev">&#9662;</span></button>
+        </div>
+        <div class="card">
+          <div class="meta">
+            <span class="lead">Dernière valeur</span><span class="value">74,1 kg</span><span class="when">30 mars 2026</span>
+          </div>
+          <svg class="chart" viewBox="0 0 320 180" aria-hidden="true">
+            <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+            <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+            <line class="grid" x1="34" y1="142.7" x2="314" y2="142.7"/>
+            <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+            <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+            <text class="tick" x="28" y="146.7" text-anchor="end">74</text>
+            <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+            <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+            <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+            <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+            <polyline class="line" points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+            <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+            <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+            <circle class="dot" cx="104" cy="57.8" r="3.5"/>
+            <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+            <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+            <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+            <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+          </svg>
+          <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone theme-dark">
+      <div class="screen">
+        <h1>Évolution</h1>
+        <div class="field">
+          <label for="m11b">Mesure</label>
+          <button class="select-trigger" id="m11b"><span>Poids</span><span class="chev">&#9662;</span></button>
+        </div>
+        <div class="card">
+          <div class="meta">
+            <span class="lead">Dernière valeur</span><span class="value">74,1 kg</span><span class="when">30 mars 2026</span>
+          </div>
+          <svg class="chart" viewBox="0 0 320 180" aria-hidden="true">
+            <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+            <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+            <line class="grid" x1="34" y1="142.7" x2="314" y2="142.7"/>
+            <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+            <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+            <text class="tick" x="28" y="146.7" text-anchor="end">74</text>
+            <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+            <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+            <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+            <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+            <polyline class="line" points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+            <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+            <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+            <circle class="dot" cx="104" cy="57.8" r="3.5"/>
+            <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+            <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+            <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+            <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+          </svg>
+          <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,1122 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>morpho — maquette s08-target-weight</title>
+<style>
+/* ------------------------------------------------------------------
+   Tokens — copiés de src/app/globals.css (design system morpho).
+   Aucune valeur inventée : chaque variable ci-dessous existe déjà.
+   ------------------------------------------------------------------ */
+:root,
+.theme-light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --progress-favorable: oklch(0.55 0.12 152);
+  --progress-adverse: var(--destructive);
+  --radius: 0.625rem;
+  --label-min-size: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --progress-favorable: oklch(0.7 0.14 152);
+  }
+}
+
+/* Forçage explicite, pour la section de vérification bi-thème */
+.theme-dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --progress-favorable: oklch(0.7 0.14 152);
+}
+
+/* Rayons dérivés (paliers du preset) */
+:root {
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  /* Geist (--font-sans) n'est pas embarquable sans asset externe :
+     la maquette retombe sur la pile système. */
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: oklch(0.97 0 0);
+  color: oklch(0.145 0 0);
+  padding: 24px 16px 80px;
+  line-height: 1.45;
+}
+@media (prefers-color-scheme: dark) {
+  body { background: oklch(0.205 0 0); color: oklch(0.985 0 0); }
+}
+
+/* ---------- chrome de la maquette (hors design system) ---------- */
+.doc-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
+.doc-sub { font-size: 0.8125rem; opacity: 0.75; margin-bottom: 28px; max-width: 64ch; }
+.doc-sub code { font-size: 0.75rem; }
+.part { font-size: 0.9375rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
+        margin: 40px 0 16px; padding-bottom: 6px; border-bottom: 2px solid currentColor; opacity: 0.85; }
+.state { margin-bottom: 36px; }
+.state > h2 { font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.65; margin-bottom: 4px; }
+.state > p.state-note { font-size: 0.8125rem; opacity: 0.75; margin-bottom: 10px; max-width: 66ch; }
+.state > p.callout { font-size: 0.8125rem; opacity: 0.75; max-width: 66ch; margin-top: 10px;
+                     border-left: 3px solid currentColor; padding-left: 12px; }
+.pair { display: flex; flex-wrap: wrap; gap: 20px; }
+
+/* ---------- viewport iOS 375 px ---------- */
+.phone {
+  width: 375px;
+  max-width: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  border: 1px solid oklch(0.145 0 0 / 25%);
+  border-radius: var(--radius-xl);
+  overflow: hidden;   /* si quelque chose déborde ici, le critère 375 px est violé */
+  position: relative;
+}
+.phone-tag {
+  font-size: var(--label-min-size); color: var(--muted-foreground);
+  padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--muted);
+}
+
+/* ---------- écran ---------- */
+.screen { padding: 16px; display: flex; flex-direction: column; gap: 16px; }
+
+.appbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px 0; }
+.appbar h3 { font-size: 1.125rem; font-weight: 600; }
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  border: 0; background: transparent; color: var(--foreground); cursor: default;
+}
+.screen h1 { font-size: 1.125rem; font-weight: 600; letter-spacing: -0.01em; }
+.topbar { display: flex; align-items: center; gap: 8px; }
+.back {
+  font-size: 0.875rem; color: var(--muted-foreground); text-decoration: none;
+  padding: 4px 8px; margin-left: -8px; border-radius: var(--radius-sm);
+}
+
+/* ---------- field / input (shadcn `field`, `input`, `label`) ---------- */
+.fieldset { border: 0; display: flex; flex-direction: column; gap: 12px; }
+.legend { font-size: 0.875rem; font-weight: 600; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > label, .field-label { font-size: 0.875rem; font-weight: 500; }
+.input {
+  width: 100%; min-width: 0; height: 40px; padding: 0 12px;
+  border: 1px solid var(--input); border-radius: var(--radius-md);
+  background: var(--background); color: var(--foreground);
+  font: inherit; font-size: 1rem;
+}
+.input::placeholder { color: var(--muted-foreground); }
+.input.focused { outline: 2px solid var(--ring); outline-offset: 2px; }
+.input.invalid { border-color: var(--destructive); }
+.field-desc { font-size: var(--label-min-size); color: var(--muted-foreground); }
+.field-error { font-size: var(--label-min-size); color: var(--destructive); display: flex; gap: 6px; align-items: flex-start; }
+
+/* ---------- button / spinner (shadcn `button`, `spinner`) ---------- */
+.btn {
+  width: 100%; min-height: 40px; padding: 0 16px;
+  border: 1px solid transparent; border-radius: var(--radius-md);
+  background: var(--primary); color: var(--primary-foreground);
+  font: inherit; font-size: 0.9375rem; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: default; text-decoration: none;
+}
+.btn[disabled] { opacity: 0.6; }
+.btn.outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+.btn.auto { width: auto; height: 36px; min-height: 36px; font-size: 0.875rem; }
+.spinner { width: 16px; height: 16px; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* ---------- separator (shadcn `separator`) ---------- */
+.sep { height: 1px; background: var(--border); }
+
+/* ---------- card (shadcn `card`) ---------- */
+.card {
+  background: var(--card); color: var(--card-foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 12px; display: flex; flex-direction: column; gap: 8px;
+  min-width: 0;
+}
+.meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.meta .lead { font-size: 0.75rem; color: var(--muted-foreground); }
+.meta .value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; font-size: 1.375rem; font-weight: 600; letter-spacing: -0.02em; }
+.meta .when { font-size: 0.75rem; color: var(--muted-foreground); }
+.note { font-size: 0.75rem; color: var(--muted-foreground); }
+
+/* ---------- LA LIGNE D'ÉCART — l'ajout de s08 dans la carte du graphe ---------- */
+.target-row {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 0.8125rem; color: var(--muted-foreground);
+}
+/* Échantillon de trait : rappelle la ligne du graphe. Décoratif,
+   il ne porte aucune information seul — le texte à côté dit tout. */
+.target-row .swatch {
+  width: 18px; height: 0; flex: none;
+  border-top: 1.5px dashed var(--muted-foreground);
+}
+.target-row b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--foreground); font-weight: 600;
+}
+
+/* ---------- select (shadcn `select`) — contexte s07, inchangé par s08 ---------- */
+.select-trigger {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; min-width: 0; height: 40px; padding: 0 12px;
+  border: 1px solid var(--input); border-radius: var(--radius-md);
+  background: var(--background); color: var(--foreground);
+  font-size: 0.9375rem; font-family: inherit; text-align: left;
+}
+.select-trigger .chev { color: var(--muted-foreground); font-size: 0.75rem; }
+
+/* ---------- graphe ----------
+   viewBox 320 ≈ largeur réelle du contenu à 375 px (375 − 32 marges − 24 padding
+   de carte = 319) → 1 unité ≈ 1 px, donc font-size 12 dans le SVG = 12 px réels,
+   soit le plancher --label-min-size. */
+.chart { width: 100%; min-width: 0; display: block; }
+.chart .grid { stroke: var(--border); stroke-width: 1; }
+.chart .axis { stroke: var(--border); stroke-width: 1; }
+.chart .tick { fill: var(--muted-foreground); font-size: 12px; font-family: inherit; }
+.chart .line { fill: none; stroke: var(--foreground); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.chart .dot { fill: var(--background); stroke: var(--foreground); stroke-width: 2; }
+/* ReferenceLine du poids cible : --muted-foreground, en tirets (design system § Graphes) */
+.chart .target { stroke: var(--muted-foreground); stroke-width: 1.5; stroke-dasharray: 6 4; fill: none; }
+.chart .target-label { fill: var(--muted-foreground); font-size: 12px; font-family: inherit; }
+
+/* ---------- skeleton (shadcn `skeleton`) ---------- */
+.sk { background: var(--muted); border-radius: var(--radius-sm); display: block; }
+.sk-line { height: 12px; }
+.sk-input { height: 40px; border-radius: var(--radius-md); }
+.sk-value { height: 26px; width: 96px; }
+.sk-target { height: 14px; width: 62%; }
+.sk-chart { height: 180px; width: 100%; border-radius: var(--radius-md); }
+
+/* ---------- toast (shadcn `sonner`) ---------- */
+.toast {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--popover); color: var(--popover-foreground);
+  padding: 12px 14px; font-size: 0.875rem;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 12%);
+}
+
+.context { opacity: 0.45; }
+</style>
+
+<h1 class="doc-title">morpho — s08 · Poids cible</h1>
+<p class="doc-sub">
+  Maquette de référence, <strong>pas du code de production</strong>. Cadres à 375 px de large
+  (iOS Safari, portrait) avec <code>overflow: hidden</code> : tout ce qui déborde du cadre est un
+  critère en échec. Toutes les couleurs viennent des tokens de <code>docs/design-system.md</code> —
+  <strong>aucune couleur de progression</strong> n'est employée ici : aucun sens « favorable » n'est
+  déclaré pour le poids. La page suit le thème système ; la dernière section force les deux thèmes
+  côte à côte. Les blocs estompés sont du contexte livré par une autre story (s04, s07), rappelé
+  pour situer l'ajout — pas le sujet de s08.
+</p>
+
+<!-- ======================================================================
+     PARTIE A — le champ de poids cible, sur l'écran de profil (s04)
+     ====================================================================== -->
+<p class="part">A · Profil — le champ « poids cible »</p>
+
+<!-- ---------------------------------------------------------------- A1 -->
+<section class="state">
+  <h2>A1 · Vide — aucune cible définie (état par défaut)</h2>
+  <p class="state-note">
+    Critère 4 : aucune cible n'est définie par défaut. Le champ est vide, avec un placeholder ;
+    rien n'est pré-rempli, aucune valeur « suggérée » à partir du poids actuel. Le second
+    <code>FieldSet</code> est l'ajout de s08 ; celui de la taille vient de s04.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /profil · aucune cible</div>
+    <div class="appbar">
+      <button class="btn-ghost" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h3>Profil</h3>
+    </div>
+    <div class="screen">
+
+      <fieldset class="fieldset context">
+        <legend class="legend">Taille de référence</legend>
+        <div class="field">
+          <label class="field-label" for="a1h">Taille (cm)</label>
+          <input class="input" id="a1h" type="text" inputmode="decimal" value="175">
+          <p class="field-desc">Sert uniquement au calcul de l'IMC. — bloc livré par s04.</p>
+        </div>
+      </fieldset>
+
+      <div class="sep"></div>
+
+      <fieldset class="fieldset">
+        <legend class="legend">Poids cible</legend>
+        <div class="field">
+          <label class="field-label" for="a1t">Poids cible (kg)</label>
+          <input class="input" id="a1t" type="text" inputmode="decimal" placeholder="70">
+          <p class="field-desc">
+            Apparaît comme ligne de référence sur le graphe du poids, avec l'écart depuis votre
+            dernière pesée. Ne s'applique à aucune autre mesure. Videz le champ pour retirer la cible.
+          </p>
+        </div>
+      </fieldset>
+
+      <button class="btn">Enregistrer</button>
+    </div>
+  </div>
+  <p class="callout">
+    Un seul bouton « Enregistrer » pour les deux sections : la cible réutilise le mécanisme
+    d'écriture du profil créé en s04, comme l'exigent les notes agentiques de la story.
+    « Videz le champ pour retirer la cible » suppose que l'effacement est autorisé —
+    question 7 de la Research, <strong>non tranchée</strong>, et jumelle de celle de la taille :
+    les deux se décident ensemble en <code>/ks-plan</code>.
+  </p>
+</section>
+
+<!-- ---------------------------------------------------------------- A2 -->
+<section class="state">
+  <h2>A2 · Chargement (cold start Neon, ~500 ms)</h2>
+  <p class="state-note">
+    Squelette à la forme exacte du contenu attendu : libellé, champ, description.
+    Le bouton reste rendu et désactivé. Jamais d'écran d'attente bloquant.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /profil · chargement</div>
+    <div class="appbar">
+      <button class="btn-ghost" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h3>Profil</h3>
+    </div>
+    <div class="screen" aria-busy="true">
+      <fieldset class="fieldset context">
+        <legend class="legend">Taille de référence</legend>
+        <div class="field">
+          <span class="sk sk-line" style="width:88px"></span>
+          <span class="sk sk-input"></span>
+          <span class="sk sk-line" style="width:70%"></span>
+        </div>
+      </fieldset>
+
+      <div class="sep"></div>
+
+      <fieldset class="fieldset">
+        <legend class="legend">Poids cible</legend>
+        <div class="field">
+          <span class="sk sk-line" style="width:104px"></span>
+          <span class="sk sk-input"></span>
+          <span class="sk sk-line" style="width:100%"></span>
+          <span class="sk sk-line" style="width:58%"></span>
+        </div>
+      </fieldset>
+
+      <button class="btn" disabled>Enregistrer</button>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- A3 -->
+<section class="state">
+  <h2>A3 · Renseigné + enregistrement en cours</h2>
+  <p class="state-note">
+    Critère 1 : la cible se modifie depuis le profil. Le champ affiche la valeur persistée,
+    au format français (virgule décimale), <code>inputmode="decimal"</code> pour le pavé numérique iOS.
+    Pendant l'écriture, <code>spinner</code> dans le bouton — jamais en plein écran — et la valeur saisie
+    reste lisible.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /profil · enregistrement</div>
+    <div class="appbar">
+      <button class="btn-ghost" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h3>Profil</h3>
+    </div>
+    <div class="screen">
+      <fieldset class="fieldset context">
+        <legend class="legend">Taille de référence</legend>
+        <div class="field">
+          <label class="field-label" for="a3h">Taille (cm)</label>
+          <input class="input" id="a3h" type="text" inputmode="decimal" value="175">
+        </div>
+      </fieldset>
+
+      <div class="sep"></div>
+
+      <fieldset class="fieldset">
+        <legend class="legend">Poids cible</legend>
+        <div class="field">
+          <label class="field-label" for="a3t">Poids cible (kg)</label>
+          <input class="input focused" id="a3t" type="text" inputmode="decimal" value="72,0">
+          <p class="field-desc">
+            Apparaît comme ligne de référence sur le graphe du poids, avec l'écart depuis votre
+            dernière pesée. Ne s'applique à aucune autre mesure. Videz le champ pour retirer la cible.
+          </p>
+        </div>
+      </fieldset>
+
+      <button class="btn" disabled>
+        <svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        Enregistrement…
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- A4 -->
+<section class="state">
+  <h2>A4 · Succès — toast <code>sonner</code></h2>
+  <p class="state-note">
+    Confirmation discrète et non bloquante. Le champ conserve la valeur enregistrée, reformatée
+    à l'affichage. Aucune redirection automatique vers le graphe : l'utilisateur reste où il est.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /profil · cible enregistrée</div>
+    <div class="appbar">
+      <button class="btn-ghost" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h3>Profil</h3>
+    </div>
+    <div class="screen" style="padding-bottom:72px">
+      <fieldset class="fieldset context">
+        <legend class="legend">Taille de référence</legend>
+        <div class="field">
+          <label class="field-label" for="a4h">Taille (cm)</label>
+          <input class="input" id="a4h" type="text" inputmode="decimal" value="175">
+        </div>
+      </fieldset>
+
+      <div class="sep"></div>
+
+      <fieldset class="fieldset">
+        <legend class="legend">Poids cible</legend>
+        <div class="field">
+          <label class="field-label" for="a4t">Poids cible (kg)</label>
+          <input class="input" id="a4t" type="text" inputmode="decimal" value="72,0">
+          <p class="field-desc">
+            Apparaît comme ligne de référence sur le graphe du poids, avec l'écart depuis votre
+            dernière pesée. Ne s'applique à aucune autre mesure. Videz le champ pour retirer la cible.
+          </p>
+        </div>
+      </fieldset>
+
+      <button class="btn">Enregistrer</button>
+    </div>
+    <div class="toast" role="status">Poids cible enregistré.</div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- A5 -->
+<section class="state">
+  <h2>A5 · Erreur de validation — valeur hors plage</h2>
+  <p class="state-note">
+    Erreur par champ, sous le champ, jamais en résumé en haut de page. Bordure du champ en
+    <code>--destructive</code>, message en clair, en français, sans code technique.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /profil · erreur de champ</div>
+    <div class="appbar">
+      <button class="btn-ghost" aria-label="Retour">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+      </button>
+      <h3>Profil</h3>
+    </div>
+    <div class="screen">
+      <fieldset class="fieldset context">
+        <legend class="legend">Taille de référence</legend>
+        <div class="field">
+          <label class="field-label" for="a5h">Taille (cm)</label>
+          <input class="input" id="a5h" type="text" inputmode="decimal" value="175">
+        </div>
+      </fieldset>
+
+      <div class="sep"></div>
+
+      <fieldset class="fieldset">
+        <legend class="legend">Poids cible</legend>
+        <div class="field">
+          <label class="field-label" for="a5t">Poids cible (kg)</label>
+          <input class="input invalid" id="a5t" type="text" inputmode="decimal" value="700" aria-invalid="true" aria-describedby="a5e">
+          <p class="field-error" id="a5e" role="alert">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top:2px;flex:none"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+            Indiquez un poids cible entre 30 et 300 kg.
+          </p>
+        </div>
+      </fieldset>
+
+      <button class="btn">Enregistrer</button>
+    </div>
+  </div>
+  <p class="callout">
+    Les bornes 30 / 300 kg sont un <strong>exemple d'affichage</strong>, pas une décision de design :
+    la plage physiologique du poids cible est la question 8 de la Research, à fixer en
+    <code>/ks-plan</code> avec celle de <code>weight_kg</code> en s03. Deux autres messages du même
+    emplacement : format invalide → « Indiquez un nombre, par exemple 70. » ;
+    échec réseau → « Enregistrement impossible pour l'instant. Réessayez. »
+  </p>
+</section>
+
+<!-- ======================================================================
+     PARTIE B — la ligne de référence et l'écart, sur le graphe du poids
+     ====================================================================== -->
+<p class="part">B · Graphe du poids — ligne de référence et écart</p>
+
+<!-- ---------------------------------------------------------------- B1 -->
+<section class="state">
+  <h2>B1 · Sans cible — le graphe de s07, intact</h2>
+  <p class="state-note">
+    Critère 4 : sans cible, <strong>ni ligne ni écart</strong>. La carte n'a pas de rangée vide,
+    pas de « — », pas d'invitation à définir une cible : rien. Le graphe reste exactement celui
+    livré par s07. C'est l'état de référence contre lequel se lit tout le reste de cette partie.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · aucune cible</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b1">Mesure</label>
+        <button class="select-trigger" id="b1" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du poids, du 5 janvier au 30 mars 2026, de 78,6 kg à 74,1 kg, 7 mesures. Aucun poids cible défini.">
+          <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+          <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+          <line class="grid" x1="34" y1="142.7" x2="314" y2="142.7"/>
+          <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+          <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+          <text class="tick" x="28" y="146.7" text-anchor="end">74</text>
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+          <polyline class="line" points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+          <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+          <circle class="dot" cx="104" cy="57.8" r="3.5"/>
+          <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+          <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+          <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+        </svg>
+
+        <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B2 -->
+<section class="state">
+  <h2>B2 · Avec cible — écart positif (cible 72,0 kg)</h2>
+  <p class="state-note">
+    Critères 2 et 3. La ligne est horizontale, en <code>--muted-foreground</code> et en tirets
+    (design system § Graphes) : elle se distingue du trait plein en <code>--foreground</code> par
+    <strong>trois</strong> caractéristiques indépendantes de la couleur — le pointillé, l'épaisseur,
+    et l'absence de points. Son étiquette dit ce qu'elle est ; l'écart signé est répété en texte
+    au-dessus du graphe. <strong>L'axe Y a été étendu vers le bas pour inclure la cible</strong> :
+    sans cela, la ligne ne serait pas dessinée du tout.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · cible 72,0 kg</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b2">Mesure</label>
+        <button class="select-trigger" id="b2" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+
+        <p class="target-row">
+          <span class="swatch" aria-hidden="true"></span>
+          Cible <b>72,0 kg</b> · écart <b>+2,1 kg</b>
+        </p>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du poids, du 5 janvier au 30 mars 2026, de 78,6 kg à 74,1 kg. Poids cible 72,0 kg, écart de plus 2,1 kg.">
+          <line class="grid" x1="34" y1="29.5" x2="314" y2="29.5"/>
+          <line class="grid" x1="34" y1="68.4" x2="314" y2="68.4"/>
+          <line class="grid" x1="34" y1="107.3" x2="314" y2="107.3"/>
+          <text class="tick" x="28" y="33.5" text-anchor="end">78</text>
+          <text class="tick" x="28" y="72.4" text-anchor="end">76</text>
+          <text class="tick" x="28" y="111.3" text-anchor="end">74</text>
+
+          <!-- ReferenceLine : y = 72,0 kg -->
+          <line class="target" x1="34" y1="146.3" x2="314" y2="146.3"/>
+          <text class="target-label" x="38" y="141">Cible 72,0 kg</text>
+
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+
+          <polyline class="line" points="34,17.8 57.3,27.5 104,45 150.7,60.6 154,58.7 267.3,91.8 314,105.4"/>
+          <circle class="dot" cx="34" cy="17.8" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="27.5" r="3.5"/>
+          <circle class="dot" cx="104" cy="45" r="3.5"/>
+          <circle class="dot" cx="150.7" cy="60.6" r="3.5"/>
+          <circle class="dot" cx="154" cy="58.7" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="91.8" r="3.5"/>
+          <circle class="dot" cx="314" cy="105.4" r="3.5"/>
+        </svg>
+
+        <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+      </div>
+    </div>
+  </div>
+  <p class="callout">
+    L'écart est présenté <strong>strictement neutre</strong> : « écart +2,1 kg », jamais « il vous reste »,
+    « retard » ou « en avance ». morpho ne connaît aucune direction d'objectif — aucun sens « favorable »
+    n'est déclaré pour le poids (question 2 et 6 de la Research, renvoyées ici par s06). D'où, aussi,
+    <strong>l'absence totale de couleur de progression</strong> : ni <code>--progress-favorable</code>,
+    ni <code>--progress-adverse</code> sur cet écran.
+  </p>
+</section>
+
+<!-- ---------------------------------------------------------------- B3 -->
+<section class="state">
+  <h2>B3 · Cible atteinte — écart 0,0 kg</h2>
+  <p class="state-note">
+    Critère 6. L'écart est exactement nul : il s'affiche <code>0,0 kg</code>, <strong>jamais</strong>
+    <code>-0,0 kg</code>. La ligne passe par le dernier point, ce qui rend l'égalité lisible sur le graphe
+    autant que dans le texte. Une seule phrase est ajoutée — « Cible atteinte. » — parce qu'elle est vraie
+    quel que soit le sens de l'objectif.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · cible 74,1 kg</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b3">Mesure</label>
+        <button class="select-trigger" id="b3" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+
+        <p class="target-row">
+          <span class="swatch" aria-hidden="true"></span>
+          Cible <b>74,1 kg</b> · écart <b>0,0 kg</b>
+        </p>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du poids. Poids cible 74,1 kg, écart de 0,0 kg : cible atteinte.">
+          <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+          <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+          <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+          <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+
+          <line class="target" x1="34" y1="140.1" x2="314" y2="140.1"/>
+          <text class="target-label" x="38" y="134.5">Cible 74,1 kg</text>
+
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+
+          <polyline class="line" points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+          <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+          <circle class="dot" cx="104" cy="57.8" r="3.5"/>
+          <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+          <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+          <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+        </svg>
+
+        <p class="note">Cible atteinte.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B4 -->
+<section class="state">
+  <h2>B4 · Cible franchie — écart négatif (cible 75,0 kg)</h2>
+  <p class="state-note">
+    Critère 6, deuxième moitié : un écart négatif s'affiche comme un nombre signé, point.
+    Aucune formulation de retard, aucune mise en garde, aucune couleur. Le dernier poids est
+    passé sous la ligne : le graphe le montre, le texte le chiffre.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · cible 75,0 kg</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b4">Mesure</label>
+        <button class="select-trigger" id="b4" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+
+        <p class="target-row">
+          <span class="swatch" aria-hidden="true"></span>
+          Cible <b>75,0 kg</b> · écart <b>-0,9 kg</b>
+        </p>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du poids. Poids cible 75,0 kg, écart de moins 0,9 kg.">
+          <line class="grid" x1="34" y1="36.5" x2="314" y2="36.5"/>
+          <line class="grid" x1="34" y1="89.6" x2="314" y2="89.6"/>
+          <line class="grid" x1="34" y1="142.7" x2="314" y2="142.7"/>
+          <text class="tick" x="28" y="40.5" text-anchor="end">78</text>
+          <text class="tick" x="28" y="93.6" text-anchor="end">76</text>
+          <text class="tick" x="28" y="146.7" text-anchor="end">74</text>
+
+          <line class="target" x1="34" y1="116.2" x2="314" y2="116.2"/>
+          <text class="target-label" x="38" y="110.5">Cible 75,0 kg</text>
+
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+
+          <polyline class="line" points="34,20.6 57.3,33.9 104,57.8 150.7,79 154,76.4 267.3,121.5 314,140.1"/>
+          <circle class="dot" cx="34" cy="20.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="33.9" r="3.5"/>
+          <circle class="dot" cx="104" cy="57.8" r="3.5"/>
+          <circle class="dot" cx="150.7" cy="79" r="3.5"/>
+          <circle class="dot" cx="154" cy="76.4" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="121.5" r="3.5"/>
+          <circle class="dot" cx="314" cy="140.1" r="3.5"/>
+        </svg>
+
+        <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B5 -->
+<section class="state">
+  <h2>B5 · Cible lointaine — le cas qui fait disparaître la ligne</h2>
+  <p class="state-note">
+    Cible à 68,0 kg alors que l'historique va de 74,1 à 78,6 kg : <strong>c'est le cas normal au début
+    d'un objectif</strong>, et c'est celui où Recharts, laissé à son défaut
+    (<code>ifOverflow: "discard"</code>), ne dessine <em>rien</em>. Ici l'axe Y inclut la cible :
+    la ligne est visible, au prix d'une courbe visuellement tassée. C'est le compromis à valider —
+    la ligne visible l'emporte, parce qu'une ligne absente est un critère faussement coché.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · cible 68,0 kg</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b5">Mesure</label>
+        <button class="select-trigger" id="b5" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,1 kg</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+
+        <p class="target-row">
+          <span class="swatch" aria-hidden="true"></span>
+          Cible <b>68,0 kg</b> · écart <b>+6,1 kg</b>
+        </p>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du poids. Poids cible 68,0 kg, écart de plus 6,1 kg. L'axe est étendu pour inclure la cible.">
+          <line class="grid" x1="34" y1="22.7" x2="314" y2="22.7"/>
+          <line class="grid" x1="34" y1="73.5" x2="314" y2="73.5"/>
+          <line class="grid" x1="34" y1="124.3" x2="314" y2="124.3"/>
+          <text class="tick" x="28" y="26.7" text-anchor="end">78</text>
+          <text class="tick" x="28" y="77.5" text-anchor="end">74</text>
+          <text class="tick" x="28" y="128.3" text-anchor="end">70</text>
+
+          <line class="target" x1="34" y1="149.7" x2="314" y2="149.7"/>
+          <text class="target-label" x="38" y="144">Cible 68,0 kg</text>
+
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+
+          <polyline class="line" points="34,15.1 57.3,21.4 104,32.9 150.7,43 154,41.7 267.3,63.3 314,72.2"/>
+          <circle class="dot" cx="34" cy="15.1" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="21.4" r="3.5"/>
+          <circle class="dot" cx="104" cy="32.9" r="3.5"/>
+          <circle class="dot" cx="150.7" cy="43" r="3.5"/>
+          <circle class="dot" cx="154" cy="41.7" r="3.5"/>
+          <circle class="dot" cx="267.3" cy="63.3" r="3.5"/>
+          <circle class="dot" cx="314" cy="72.2" r="3.5"/>
+        </svg>
+
+        <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B6 -->
+<section class="state">
+  <h2>B6 · Une autre mesure sélectionnée — aucune ligne, aucun écart</h2>
+  <p class="state-note">
+    Critère 5. La cible <strong>ne s'applique qu'au poids</strong>. Sur « Taille » — comme sur les huit
+    autres mensurations <em>et sur l'IMC</em> — la carte est celle de s07, sans rangée d'écart et sans
+    ligne de référence. C'est le test qui compte : sélectionner une autre mesure et vérifier l'absence.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Taille · cible 72,0 kg définie</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b6">Mesure</label>
+        <button class="select-trigger" id="b6" aria-haspopup="listbox" aria-expanded="false">
+          <span>Taille</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">84,2 cm</span>
+          <span class="when">30 mars 2026</span>
+        </div>
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Courbe du tour de taille, 4 mesures entre le 5 janvier et le 30 mars 2026. Aucune ligne de référence.">
+          <line class="grid" x1="34" y1="10" x2="314" y2="10"/>
+          <line class="grid" x1="34" y1="68.4" x2="314" y2="68.4"/>
+          <line class="grid" x1="34" y1="126.8" x2="314" y2="126.8"/>
+          <text class="tick" x="28" y="14" text-anchor="end">89</text>
+          <text class="tick" x="28" y="72.4" text-anchor="end">87</text>
+          <text class="tick" x="28" y="130.8" text-anchor="end">85</text>
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+          <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+          <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+          <polyline class="line" points="34,24.6 57.3,42.1 104,68.4 314,150.2"/>
+          <circle class="dot" cx="34" cy="24.6" r="3.5"/>
+          <circle class="dot" cx="57.3" cy="42.1" r="3.5"/>
+          <circle class="dot" cx="104" cy="68.4" r="3.5"/>
+          <circle class="dot" cx="314" cy="150.2" r="3.5"/>
+        </svg>
+        <p class="note">Seules les sessions où le tour de taille a été saisi apparaissent — 4 mesures sur 7 sessions.</p>
+      </div>
+    </div>
+  </div>
+  <p class="callout">
+    L'IMC dérive du poids, donc une cible de poids induit mécaniquement une cible d'IMC.
+    <strong>Elle n'est pas affichée</strong> : lecture littérale du critère 5, et question 12 de la
+    Research à confirmer en <code>/ks-plan</code>. C'est exactement le genre d'ajout « logique »
+    qu'un agent fait spontanément — il est interdit ici.
+  </p>
+</section>
+
+<!-- ---------------------------------------------------------------- B7 -->
+<section class="state">
+  <h2>B7 · Un seul point + cible</h2>
+  <p class="state-note">
+    Cas dégradé de s07 combiné à la cible : un point unique, aucune tendance, mais l'écart reste
+    calculable et la ligne reste posée. Rien ne plante, rien n'est masqué.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · 1 mesure · cible 72,0 kg</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b7">Mesure</label>
+        <button class="select-trigger" id="b7" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="meta">
+          <span class="lead">Dernière valeur</span>
+          <span class="value">74,8 kg</span>
+          <span class="when">12 mars 2026</span>
+        </div>
+
+        <p class="target-row">
+          <span class="swatch" aria-hidden="true"></span>
+          Cible <b>72,0 kg</b> · écart <b>+2,8 kg</b>
+        </p>
+
+        <svg class="chart" viewBox="0 0 320 180" role="img"
+             aria-label="Une seule mesure de poids, 74,8 kg le 12 mars 2026. Poids cible 72,0 kg, écart de plus 2,8 kg.">
+          <line class="grid" x1="34" y1="18.6" x2="314" y2="18.6"/>
+          <line class="grid" x1="34" y1="61.5" x2="314" y2="61.5"/>
+          <line class="grid" x1="34" y1="104.5" x2="314" y2="104.5"/>
+          <text class="tick" x="28" y="22.6" text-anchor="end">75</text>
+          <text class="tick" x="28" y="65.5" text-anchor="end">74</text>
+          <text class="tick" x="28" y="108.5" text-anchor="end">73</text>
+
+          <line class="target" x1="34" y1="147.4" x2="314" y2="147.4"/>
+          <text class="target-label" x="38" y="142">Cible 72,0 kg</text>
+
+          <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+          <text class="tick" x="174" y="173" text-anchor="middle">12 mars</text>
+          <circle class="dot" cx="174" cy="27.2" r="4"/>
+        </svg>
+
+        <p class="note">Une seule mesure enregistrée : pas encore de tendance à lire.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B8 -->
+<section class="state">
+  <h2>B8 · Chargement</h2>
+  <p class="state-note">
+    La rangée d'écart a son propre squelette, à sa forme : sinon la carte se réagence sous les doigts
+    à l'arrivée des données. Le sélecteur reste utilisable pendant l'attente.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · chargement</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b8">Mesure</label>
+        <button class="select-trigger" id="b8" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card" aria-busy="true">
+        <div class="meta"><span class="sk sk-value"></span></div>
+        <span class="sk sk-target"></span>
+        <span class="sk sk-chart"></span>
+        <span class="sk sk-line" style="width:62%"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B9 -->
+<section class="state">
+  <h2>B9 · Erreur de chargement — état hérité de s07, non dupliqué</h2>
+  <p class="state-note">
+    Quand la série ne charge pas, la cible n'a plus de dernier poids auquel se comparer :
+    <strong>ni ligne ni écart</strong>, et surtout aucun écart calculé sur une valeur manquante.
+    L'écran affiche l'état d'erreur de s07, inchangé. s08 n'ajoute pas un second message.
+  </p>
+  <div class="phone">
+    <div class="phone-tag">375 px · /graphes · Poids · erreur</div>
+    <div class="screen">
+      <div class="topbar"><a class="back" href="#">&#8592; Accueil</a></div>
+      <h1>Évolution</h1>
+
+      <div class="field">
+        <label for="b9">Mesure</label>
+        <button class="select-trigger" id="b9" aria-haspopup="listbox" aria-expanded="false">
+          <span>Poids</span><span class="chev">&#9662;</span>
+        </button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:28px 16px" role="alert">
+          <h3 style="font-size:0.9375rem;font-weight:600">Impossible de charger la courbe</h3>
+          <p style="font-size:0.8125rem;color:var(--muted-foreground);max-width:30ch">Les données n'ont pas pu être récupérées. Vérifiez votre connexion, puis réessayez.</p>
+          <button class="btn outline auto" style="margin-top:4px">Réessayer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------------- B10 -->
+<section class="state">
+  <h2>B10 · Vérification bi-thème — clair et sombre forcés</h2>
+  <p class="state-note">
+    Le point de contrôle réel de cet écran : la ligne en <code>--muted-foreground</code> pointillée
+    doit rester distinguable du trait en <code>--foreground</code> <em>et</em> lisible sur
+    <code>--card</code>, dans les deux jeux de tokens. En sombre, <code>--muted-foreground</code>
+    passe de <code>oklch(0.556)</code> à <code>oklch(0.708)</code> : la ligne s'éclaircit pendant
+    que le trait passe au blanc cassé — c'est le pointillé, pas la couleur, qui porte la distinction.
+  </p>
+  <div class="pair">
+    <div class="phone theme-light">
+      <div class="phone-tag">375 px · thème clair forcé</div>
+      <div class="screen">
+        <h1>Évolution</h1>
+        <div class="field">
+          <label for="b10a">Mesure</label>
+          <button class="select-trigger" id="b10a"><span>Poids</span><span class="chev">&#9662;</span></button>
+        </div>
+        <div class="card">
+          <div class="meta">
+            <span class="lead">Dernière valeur</span><span class="value">74,1 kg</span><span class="when">30 mars 2026</span>
+          </div>
+          <p class="target-row">
+            <span class="swatch" aria-hidden="true"></span>
+            Cible <b>72,0 kg</b> · écart <b>+2,1 kg</b>
+          </p>
+          <svg class="chart" viewBox="0 0 320 180" aria-hidden="true">
+            <line class="grid" x1="34" y1="29.5" x2="314" y2="29.5"/>
+            <line class="grid" x1="34" y1="68.4" x2="314" y2="68.4"/>
+            <line class="grid" x1="34" y1="107.3" x2="314" y2="107.3"/>
+            <text class="tick" x="28" y="33.5" text-anchor="end">78</text>
+            <text class="tick" x="28" y="72.4" text-anchor="end">76</text>
+            <text class="tick" x="28" y="111.3" text-anchor="end">74</text>
+            <line class="target" x1="34" y1="146.3" x2="314" y2="146.3"/>
+            <text class="target-label" x="38" y="141">Cible 72,0 kg</text>
+            <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+            <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+            <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+            <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+            <polyline class="line" points="34,17.8 57.3,27.5 104,45 150.7,60.6 154,58.7 267.3,91.8 314,105.4"/>
+            <circle class="dot" cx="34" cy="17.8" r="3.5"/>
+            <circle class="dot" cx="57.3" cy="27.5" r="3.5"/>
+            <circle class="dot" cx="104" cy="45" r="3.5"/>
+            <circle class="dot" cx="150.7" cy="60.6" r="3.5"/>
+            <circle class="dot" cx="154" cy="58.7" r="3.5"/>
+            <circle class="dot" cx="267.3" cy="91.8" r="3.5"/>
+            <circle class="dot" cx="314" cy="105.4" r="3.5"/>
+          </svg>
+          <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone theme-dark">
+      <div class="phone-tag">375 px · thème sombre forcé</div>
+      <div class="screen">
+        <h1>Évolution</h1>
+        <div class="field">
+          <label for="b10b">Mesure</label>
+          <button class="select-trigger" id="b10b"><span>Poids</span><span class="chev">&#9662;</span></button>
+        </div>
+        <div class="card">
+          <div class="meta">
+            <span class="lead">Dernière valeur</span><span class="value">74,1 kg</span><span class="when">30 mars 2026</span>
+          </div>
+          <p class="target-row">
+            <span class="swatch" aria-hidden="true"></span>
+            Cible <b>72,0 kg</b> · écart <b>+2,1 kg</b>
+          </p>
+          <svg class="chart" viewBox="0 0 320 180" aria-hidden="true">
+            <line class="grid" x1="34" y1="29.5" x2="314" y2="29.5"/>
+            <line class="grid" x1="34" y1="68.4" x2="314" y2="68.4"/>
+            <line class="grid" x1="34" y1="107.3" x2="314" y2="107.3"/>
+            <text class="tick" x="28" y="33.5" text-anchor="end">78</text>
+            <text class="tick" x="28" y="72.4" text-anchor="end">76</text>
+            <text class="tick" x="28" y="111.3" text-anchor="end">74</text>
+            <line class="target" x1="34" y1="146.3" x2="314" y2="146.3"/>
+            <text class="target-label" x="38" y="141">Cible 72,0 kg</text>
+            <line class="axis" x1="34" y1="156" x2="314" y2="156"/>
+            <text class="tick" x="34" y="173" text-anchor="start">5 janv.</text>
+            <text class="tick" x="174" y="173" text-anchor="middle">16 févr.</text>
+            <text class="tick" x="314" y="173" text-anchor="end">30 mars</text>
+            <polyline class="line" points="34,17.8 57.3,27.5 104,45 150.7,60.6 154,58.7 267.3,91.8 314,105.4"/>
+            <circle class="dot" cx="34" cy="17.8" r="3.5"/>
+            <circle class="dot" cx="57.3" cy="27.5" r="3.5"/>
+            <circle class="dot" cx="104" cy="45" r="3.5"/>
+            <circle class="dot" cx="150.7" cy="60.6" r="3.5"/>
+            <circle class="dot" cx="154" cy="58.7" r="3.5"/>
+            <circle class="dot" cx="267.3" cy="91.8" r="3.5"/>
+            <circle class="dot" cx="314" cy="105.4" r="3.5"/>
+          </svg>
+          <p class="note">Seules les sessions où le poids a été saisi apparaissent — 7 mesures.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

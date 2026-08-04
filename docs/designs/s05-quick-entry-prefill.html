@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>morpho — s05 quick entry prefill (maquette de référence)</title>
+<style>
+/* ------------------------------------------------------------------
+   TOKENS — copiés de morpho/docs/design-system.md et src/app/globals.css
+   Aucune couleur en dur ailleurs dans ce fichier.
+   ------------------------------------------------------------------ */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  /* déclarés pour fidélité — NON UTILISÉS ici : cet écran n'affiche aucun delta */
+  --progress-favorable: oklch(0.55 0.12 152);
+  --progress-adverse: var(--destructive);
+
+  --radius: 0.625rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.875rem;
+  --label-min-size: 0.75rem;
+
+  /* Geist n'est pas embarquable sans asset externe → pile système (écart assumé du mockup) */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%); /* valeur réelle de globals.css ; le design system annonce 10% */
+  --ring: oklch(0.556 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --progress-favorable: oklch(0.7 0.14 152);
+  --progress-adverse: var(--destructive);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.force-light) {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --progress-favorable: oklch(0.7 0.14 152);
+    --progress-adverse: var(--destructive);
+  }
+}
+
+/* ------------------------------------------------------------------
+   Châssis de la page de référence (hors produit)
+   ------------------------------------------------------------------ */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+.page { max-width: 62rem; margin: 0 auto; padding: 1.5rem 1rem 6rem; }
+.doc-h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 .5rem; }
+.doc-lead { color: var(--muted-foreground); font-size: .875rem; margin: 0 0 1.5rem; max-width: 46rem; }
+.doc-warn {
+  border: 1px solid var(--border); border-left-width: 3px; border-left-color: var(--destructive);
+  border-radius: var(--radius-md); padding: .75rem 1rem; font-size: .8125rem;
+  color: var(--muted-foreground); margin: 0 0 2rem; max-width: 46rem;
+}
+.doc-warn strong { color: var(--foreground); }
+.section { margin: 0 0 3rem; }
+.section-h { font-size: 1rem; font-weight: 600; margin: 0 0 .25rem; }
+.section-note { font-size: .8125rem; color: var(--muted-foreground); margin: 0 0 1rem; max-width: 46rem; }
+.frames { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-start; }
+
+/* Cadre 375 px — la cible réelle */
+.frame { width: 100%; max-width: 375px; flex: 0 1 375px; }
+.frame-tag {
+  font-size: .6875rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted-foreground); margin: 0 0 .375rem; font-weight: 600;
+}
+.viewport {
+  width: 100%; background: var(--background); color: var(--foreground);
+  border: 1px solid var(--border); border-radius: var(--radius-xl); overflow: hidden;
+}
+
+/* ------------------------------------------------------------------
+   Écran produit
+   ------------------------------------------------------------------ */
+.screen { padding: 1rem; }
+.screen-title { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 .75rem; }
+.screen-sub { font-size: .8125rem; color: var(--muted-foreground); margin: 0 0 1rem; }
+
+/* Button (shadcn button, variante default / outline) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; width: 100%;
+  height: 2.25rem; padding: 0 1rem; border-radius: var(--radius-md); border: 1px solid transparent;
+  background: var(--primary); color: var(--primary-foreground);
+  font-family: inherit; font-size: .875rem; font-weight: 500; cursor: pointer;
+}
+.btn-outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+
+/* Field (shadcn field) — ligne compacte : libellé à gauche, champ à droite */
+.field { display: flex; align-items: center; gap: .75rem; padding: .3125rem 0; }
+.field-label { flex: 1 1 auto; font-size: .875rem; font-weight: 500; min-width: 0; }
+.field-unit { color: var(--muted-foreground); font-weight: 400; }
+.field-error-row { padding: 0 0 .375rem; }
+.field-error { color: var(--destructive); font-size: .8125rem; margin: 0; text-align: right; }
+
+/* Input (shadcn input) — h-8 = 32 px, la hauteur RÉELLE du preset radix-nova */
+.input {
+  flex: 0 0 auto; width: 7rem; height: 2rem;
+  border: 1px solid var(--input); border-radius: var(--radius-md);
+  background: transparent; color: var(--foreground);
+  font-family: var(--font-mono); font-size: 1rem; /* 16px : évite le zoom auto d'iOS au focus */
+  text-align: right; padding: 0 .5rem;
+}
+.input::placeholder { color: var(--muted-foreground); }
+.input:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; border-color: var(--ring); }
+.input.error { border-color: var(--destructive); }
+
+/* LE DELTA s05 : le marqueur DOM pilote la couleur de la valeur */
+.input[data-prefilled="true"] { color: var(--muted-foreground); }
+
+/* Date : champ large, aligné à gauche */
+.input-date { width: 9.5rem; text-align: left; }
+
+/* Separator (shadcn separator, tiré par field) */
+.sep { height: 1px; background: var(--border); border: 0; margin: .75rem 0; }
+
+/* Légende du pré-remplissage — le porteur NON CHROMATIQUE de l'information */
+.legend { font-size: .8125rem; color: var(--muted-foreground); margin: 0 0 .5rem; }
+
+/* Skeleton (shadcn skeleton) */
+.skeleton {
+  background: var(--muted); border-radius: var(--radius-md);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.skeleton-input { width: 7rem; height: 2rem; flex: 0 0 auto; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
+
+/* Sonner (toast) */
+.toast {
+  border: 1px solid var(--border); background: var(--card); color: var(--card-foreground);
+  border-radius: var(--radius-md); padding: .625rem .75rem; font-size: .875rem;
+  box-shadow: 0 1px 2px oklch(0 0 0 / 8%); margin: .75rem 0 0;
+}
+
+/* Surbrillance de sélection — APPROXIMATION de la surbrillance native du navigateur.
+   Rien n'est restylé en production. */
+.selection-fake { background: var(--primary); color: var(--primary-foreground); border-radius: 2px; }
+.input-selected {
+  display: flex; align-items: center; justify-content: flex-end;
+  width: 7rem; height: 2rem; flex: 0 0 auto;
+  border: 1px solid var(--ring); outline: 2px solid var(--ring); outline-offset: 1px;
+  border-radius: var(--radius-md); padding: 0 .5rem;
+  font-family: var(--font-mono); font-size: 1rem;
+}
+
+/* Annotations de la maquette (hors produit) */
+.callout {
+  border: 1px dashed var(--border); border-radius: var(--radius-md);
+  padding: .625rem .75rem; font-size: .75rem; color: var(--muted-foreground);
+  margin: .75rem 0 0; max-width: 375px;
+}
+.callout code, .doc-lead code, .section-note code {
+  font-family: var(--font-mono); font-size: .95em; color: var(--foreground);
+}
+.gap-row { display: flex; align-items: center; gap: .75rem; padding: .3125rem 0; }
+.input-44 { height: 2.75rem; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1 class="doc-h1">morpho — s05 · saisie pré-remplie</h1>
+  <p class="doc-lead">
+    Maquette de référence. Cible : iOS Safari, portrait, <strong>375 px</strong>. Chaque cadre ci-dessous fait exactement
+    375 px de large. La page suit le thème système ; la section <em>Thème sombre</em> force le rendu sombre pour que les
+    deux thèmes soient visibles quelle que soit la machine qui ouvre ce fichier.
+  </p>
+
+  <p class="doc-warn">
+    <strong>Référence, pas du code.</strong> Ne rien copier en production : Execute construit avec les vrais composants
+    shadcn (<code>ui/field.tsx</code>, <code>ui/input.tsx</code>, <code>ui/button.tsx</code>, <code>ui/skeleton.tsx</code>)
+    et les utilitaires Tailwind qui référencent les tokens. Les six lignes de script en bas de fichier ne servent qu'à
+    démontrer deux critères d'acceptation (retrait du marqueur, sélection au focus) — ce n'est pas l'implémentation.
+    Les blocs marqués <em>(s03)</em> sont la ligne de base reprise pour le contexte ; s05 n'y touche pas.
+  </p>
+
+  <!-- ============================================================ A -->
+  <section class="section">
+    <h2 class="section-h">A · Écran d'accueil — le tap unique <em>(s05, critère 5)</em></h2>
+    <p class="section-note">
+      Accueil authentifié provisoire de s02. Un <code>Button</code> pleine largeur, en tête d'écran, enveloppé dans un
+      <code>&lt;Link&gt;</code> : un tap, la saisie. Pas d'icône — l'attribution des icônes <code>lucide</code> est un gap
+      ouvert du design system. Ce bloc est repris à l'identique par s06 au-dessus de la silhouette.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · accueil</p>
+        <div class="viewport">
+          <div class="screen">
+            <h3 class="screen-title">morpho</h3>
+            <p class="screen-sub">olivier@exemple.fr</p>
+            <button class="btn" type="button">Nouvelle saisie</button>
+            <hr class="sep">
+            <p class="screen-sub" style="margin:0">La silhouette remplace ce placeholder en s06.</p>
+            <div style="margin-top:1.5rem">
+              <button class="btn btn-outline" type="button">Se déconnecter</button>
+            </div>
+          </div>
+        </div>
+        <p class="callout">Un seul contrôle mène à la saisie, et il est au-dessus de la ligne de flottaison. Pas de FAB, pas de barre d'onglets : rien de tel n'existe dans le design system.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ B -->
+  <section class="section">
+    <h2 class="section-h">B · État nominal — dix champs pré-remplis <em>(le cœur de s05)</em></h2>
+    <p class="section-note">
+      Chaque valeur est la <strong>dernière valeur connue de cette mesure</strong>, quelle que soit la session d'où elle
+      vient. Les champs portent <code>data-prefilled="true"</code> et affichent leur valeur en <code>--muted-foreground</code>.
+      La légende porte la même information sans couleur. Tapez dans un champ : le marqueur tombe et la valeur passe en
+      <code>--foreground</code>.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · nominal</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+
+            <div class="field">
+              <label class="field-label" for="d1">Date</label>
+              <input class="input input-date" id="d1" type="date" value="2026-08-02">
+            </div>
+
+            <hr class="sep">
+            <p class="legend">Les valeurs grisées sont vos dernières mesures. Touchez un champ pour le remplacer.</p>
+
+            <div class="field"><label class="field-label" for="f1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="f1" type="text" inputmode="decimal" value="82,4" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="f2" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="f3" type="text" inputmode="decimal" value="34,5" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f4">Taille <span class="field-unit">(cm)</span></label><input class="input" id="f4" type="text" inputmode="decimal" value="96" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f5">Hanches <span class="field-unit">(cm)</span></label><input class="input" id="f5" type="text" inputmode="decimal" value="101" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f6">Cuisse <span class="field-unit">(cm)</span></label><input class="input" id="f6" type="text" inputmode="decimal" value="58" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f7">Mollet <span class="field-unit">(cm)</span></label><input class="input" id="f7" type="text" inputmode="decimal" value="39" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f8">Épaules <span class="field-unit">(cm)</span></label><input class="input" id="f8" type="text" inputmode="decimal" value="118" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f9">Masse grasse <span class="field-unit">(%)</span></label><input class="input" id="f9" type="text" inputmode="decimal" value="24,8" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="f10">Masse musculaire <span class="field-unit">(%)</span></label><input class="input" id="f10" type="text" inputmode="decimal" value="36,2" data-prefilled="true"></div>
+
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+        <p class="callout">
+          Soumettre sans rien toucher enregistre une nouvelle session avec ces valeurs : un plateau est une donnée, pas
+          une absence de donnée (critère 4). Le libellé le plus long — « Masse musculaire (%) » — tient sans troncature
+          à 375 px.
+        </p>
+      </div>
+
+      <div class="frame">
+        <p class="frame-tag">375 px · champs touchés (f1 et f4 modifiés)</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+            <div class="field">
+              <label class="field-label" for="d2">Date</label>
+              <input class="input input-date" id="d2" type="date" value="2026-08-02">
+            </div>
+            <hr class="sep">
+            <p class="legend">Les valeurs grisées sont vos dernières mesures. Touchez un champ pour le remplacer.</p>
+            <div class="field"><label class="field-label" for="g1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="g1" type="text" inputmode="decimal" value="81,9"></div>
+            <div class="field"><label class="field-label" for="g2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="g2" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="g3" type="text" inputmode="decimal" value="34,5" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g4">Taille <span class="field-unit">(cm)</span></label><input class="input" id="g4" type="text" inputmode="decimal" value="94,5"></div>
+            <div class="field"><label class="field-label" for="g5">Hanches <span class="field-unit">(cm)</span></label><input class="input" id="g5" type="text" inputmode="decimal" value="101" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g6">Cuisse <span class="field-unit">(cm)</span></label><input class="input" id="g6" type="text" inputmode="decimal" value="58" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g7">Mollet <span class="field-unit">(cm)</span></label><input class="input" id="g7" type="text" inputmode="decimal" value="39" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g8">Épaules <span class="field-unit">(cm)</span></label><input class="input" id="g8" type="text" inputmode="decimal" value="118" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g9">Masse grasse <span class="field-unit">(%)</span></label><input class="input" id="g9" type="text" inputmode="decimal" value="24,8" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="g10">Masse musculaire <span class="field-unit">(%)</span></label><input class="input" id="g10" type="text" inputmode="decimal" value="36,2" data-prefilled="true"></div>
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+        <p class="callout">
+          Le cas réel : deux chiffres corrigés, huit repris. Le contraste entre les deux encres dit d'un coup d'œil ce
+          qui a été touché aujourd'hui. Le retrait du marqueur est irréversible dans la session.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ C -->
+  <section class="section">
+    <h2 class="section-h">C · Chargement — le formulaire se peint avant ses valeurs</h2>
+    <p class="section-note">
+      Cold start Neon ≈ 500 ms sur un budget de 20 s. Titre, date, libellés et bouton sont peints immédiatement ; seules
+      les dix valeurs sont derrière la frontière Suspense, chacune remplacée par un <code>Skeleton</code> à la hauteur et
+      à la largeur exactes du champ. <strong>Jamais de spinner plein écran.</strong> Un champ vide et interactif que les
+      valeurs viendraient écraser 500 ms plus tard serait pire que l'attente : le squelette est ce qui rend l'arrivée des
+      valeurs non destructive.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · chargement</p>
+        <div class="viewport">
+          <div class="screen">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+            <div class="field">
+              <label class="field-label">Date</label>
+              <input class="input input-date" type="date" value="2026-08-02">
+            </div>
+            <hr class="sep">
+            <p class="legend">&nbsp;</p>
+            <div class="field"><span class="field-label">Poids <span class="field-unit">(kg)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Poitrine <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Biceps <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Taille <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Hanches <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Cuisse <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Mollet <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Épaules <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Masse grasse <span class="field-unit">(%)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Masse musculaire <span class="field-unit">(%)</span></span><span class="skeleton skeleton-input"></span></div>
+            <hr class="sep">
+            <button class="btn" type="button">Enregistrer</button>
+          </div>
+        </div>
+        <p class="callout">
+          La ligne de légende garde sa place vide pendant le chargement : elle ne s'affiche qu'une fois qu'on sait s'il
+          existe au moins une valeur reprise. Sans cette réservation, la liste sauterait à l'arrivée des valeurs.
+          La stratégie technique (Suspense / remontage par <code>key</code> / champs contrôlés) est tranchée au Plan.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ D -->
+  <section class="section">
+    <h2 class="section-h">D · États vides</h2>
+    <p class="section-note">
+      Deux cas distincts. À gauche : aucun historique du tout (première saisie). À droite : le cas courant, certaines
+      mesures n'ont jamais été prises. Dans les deux cas <strong>aucune valeur inventée, aucun 0, aucun placeholder
+      chiffré</strong> dans un champ vide. Le composant <code>Empty</code> n'est volontairement pas utilisé : la page
+      n'est pas vide, c'est un formulaire pleinement utilisable, et le remplacer par un panneau explicatif irait contre
+      le budget de 20 secondes.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · aucun historique</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+            <div class="field"><label class="field-label" for="d3">Date</label><input class="input input-date" id="d3" type="date" value="2026-08-02"></div>
+            <hr class="sep">
+            <p class="legend">Première saisie : rien à reprendre. Les prochaines fois, vos valeurs seront déjà là.</p>
+            <div class="field"><label class="field-label" for="h1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="h1" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="h2" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="h3" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h4">Taille <span class="field-unit">(cm)</span></label><input class="input" id="h4" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h5">Hanches <span class="field-unit">(cm)</span></label><input class="input" id="h5" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h6">Cuisse <span class="field-unit">(cm)</span></label><input class="input" id="h6" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h7">Mollet <span class="field-unit">(cm)</span></label><input class="input" id="h7" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h8">Épaules <span class="field-unit">(cm)</span></label><input class="input" id="h8" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h9">Masse grasse <span class="field-unit">(%)</span></label><input class="input" id="h9" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="h10">Masse musculaire <span class="field-unit">(%)</span></label><input class="input" id="h10" type="text" inputmode="decimal" value=""></div>
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+        <p class="callout">La légende du pré-remplissage cède la place et annonce le bénéfice à venir. Aucun champ ne porte <code>data-prefilled</code>.</p>
+      </div>
+
+      <div class="frame">
+        <p class="frame-tag">375 px · pré-remplissage partiel</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+            <div class="field"><label class="field-label" for="d4">Date</label><input class="input input-date" id="d4" type="date" value="2026-08-02"></div>
+            <hr class="sep">
+            <p class="legend">Les valeurs grisées sont vos dernières mesures. Touchez un champ pour le remplacer.</p>
+            <div class="field"><label class="field-label" for="i1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="i1" type="text" inputmode="decimal" value="82,4" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="i2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="i2" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="i3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="i3" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="i4">Taille <span class="field-unit">(cm)</span></label><input class="input" id="i4" type="text" inputmode="decimal" value="96" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="i5">Hanches <span class="field-unit">(cm)</span></label><input class="input" id="i5" type="text" inputmode="decimal" value="101" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="i6">Cuisse <span class="field-unit">(cm)</span></label><input class="input" id="i6" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="i7">Mollet <span class="field-unit">(cm)</span></label><input class="input" id="i7" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="i8">Épaules <span class="field-unit">(cm)</span></label><input class="input" id="i8" type="text" inputmode="decimal" value="118" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="i9">Masse grasse <span class="field-unit">(%)</span></label><input class="input" id="i9" type="text" inputmode="decimal" value="24,8" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="i10">Masse musculaire <span class="field-unit">(%)</span></label><input class="input" id="i10" type="text" inputmode="decimal" value=""></div>
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+        <p class="callout">
+          Biceps, cuisse, mollet et masse musculaire n'ont jamais été mesurés : champs vides, pas de marqueur
+          (critère 2). Le pré-remplissage est <strong>par mesure</strong> : « Poitrine » peut venir d'une session
+          d'il y a trois semaines pendant que « Poids » vient d'hier.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ E -->
+  <section class="section">
+    <h2 class="section-h">E · Focus et sélection du contenu <em>(s05, critère 6)</em></h2>
+    <p class="section-note">
+      Toucher un champ pré-rempli sélectionne son contenu : la première frappe remplace la valeur, sans effacement manuel.
+      La surbrillance est celle du navigateur — <strong>rien n'est restylé en production</strong>, il n'y a donc aucun token
+      à définir. Le rendu ci-dessous l'approxime avec <code>--primary</code> / <code>--primary-foreground</code> pour la
+      rendre visible sur cette page. L'anneau <code>--ring</code>, lui, est obligatoire : la saisie enchaîne les champs au
+      clavier système.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · extrait, champ « Poids » focalisé</p>
+        <div class="viewport">
+          <div class="screen">
+            <p class="legend">Les valeurs grisées sont vos dernières mesures. Touchez un champ pour le remplacer.</p>
+            <div class="field">
+              <span class="field-label">Poids <span class="field-unit">(kg)</span></span>
+              <span class="input-selected"><span class="selection-fake">82,4</span></span>
+            </div>
+            <div class="field"><label class="field-label" for="j2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="j2" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="j3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="j3" type="text" inputmode="decimal" value="34,5" data-prefilled="true"></div>
+          </div>
+        </div>
+        <p class="callout">
+          Risque connu, non vérifiable hors appareil : sur iOS Safari, le focus déclenché par un toucher repositionne le
+          curseur après le handler. La variante qui tient réellement se valide sur téléphone pendant la review, en même
+          temps que le chrono des 20 s.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ F -->
+  <section class="section">
+    <h2 class="section-h">F · Erreurs</h2>
+    <p class="section-note">
+      Deux erreurs de nature différente. À gauche, l'erreur de validation <em>(s03)</em> : par champ, sous le champ, en
+      français, sans code technique, jamais un résumé en haut de page. À droite, l'erreur propre à s05 : le
+      pré-remplissage n'a pas pu être chargé. <strong>Elle ne bloque rien</strong> — l'échec du confort ne doit pas
+      emporter la capacité de saisir.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · valeur hors plage</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <p class="legend">Les valeurs grisées sont vos dernières mesures. Touchez un champ pour le remplacer.</p>
+            <div class="field"><label class="field-label" for="k1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="k1" type="text" inputmode="decimal" value="81,9"></div>
+            <div class="field"><label class="field-label" for="k2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="k2" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="field">
+              <label class="field-label" for="k3">Taille <span class="field-unit">(cm)</span></label>
+              <input class="input error" id="k3" type="text" inputmode="decimal" value="500" aria-invalid="true" aria-describedby="k3-err">
+            </div>
+            <div class="field-error-row"><p class="field-error" id="k3-err">Valeur hors plage (30 à 200 cm).</p></div>
+            <div class="field"><label class="field-label" for="k4">Hanches <span class="field-unit">(cm)</span></label><input class="input" id="k4" type="text" inputmode="decimal" value="101" data-prefilled="true"></div>
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+        <p class="callout">
+          Les autres champs conservent leur valeur <strong>et</strong> leur marqueur : une erreur sur un champ ne doit
+          pas transformer les neuf autres en saisies de l'utilisateur.
+        </p>
+      </div>
+
+      <div class="frame">
+        <p class="frame-tag">375 px · pré-remplissage indisponible</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+            <div class="field"><label class="field-label" for="d5">Date</label><input class="input input-date" id="d5" type="date" value="2026-08-02"></div>
+            <hr class="sep">
+            <p class="legend">Vos dernières valeurs n'ont pas pu être chargées. Vous pouvez saisir directement.</p>
+            <div class="field"><label class="field-label" for="l1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="l1" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="l2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="l2" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="l3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="l3" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="l4">Taille <span class="field-unit">(cm)</span></label><input class="input" id="l4" type="text" inputmode="decimal" value=""></div>
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+        <p class="callout">
+          Message en clair disant quoi faire, pas de code technique, pas de bandeau <code>alert</code> : ce n'est pas une
+          alerte système, c'est une dégradation de confort. Le formulaire reste enregistrable.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ G -->
+  <section class="section">
+    <h2 class="section-h">G · Succès <em>(s03, inchangé)</em></h2>
+    <p class="section-note">Toast <code>sonner</code>, discret et non bloquant, puis retour à l'accueil. s05 n'introduit pas <code>sonner</code> : il appartient à s03.</p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · confirmation</p>
+        <div class="viewport">
+          <div class="screen">
+            <h3 class="screen-title">morpho</h3>
+            <p class="screen-sub">olivier@exemple.fr</p>
+            <button class="btn" type="button">Nouvelle saisie</button>
+            <div class="toast">Session du 2 août enregistrée.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ H -->
+  <section class="section">
+    <h2 class="section-h">H · Thème sombre — état nominal forcé</h2>
+    <p class="section-note">
+      Même écran, tokens de <code>.dark</code>. Le point à vérifier : la valeur pré-remplie en
+      <code>--muted-foreground</code> (0.708) sur <code>--background</code> (0.145) doit rester nettement lisible et
+      nettement distincte de <code>--foreground</code> (0.985). Elle ne doit jamais tomber au niveau d'un texte fantôme.
+    </p>
+    <div class="frames">
+      <div class="frame dark">
+        <p class="frame-tag">375 px · sombre</p>
+        <div class="viewport">
+          <form class="screen" onsubmit="return false">
+            <h3 class="screen-title">Nouvelle saisie</h3>
+            <div class="field"><label class="field-label" for="d6">Date</label><input class="input input-date" id="d6" type="date" value="2026-08-02"></div>
+            <hr class="sep">
+            <p class="legend">Les valeurs grisées sont vos dernières mesures. Touchez un champ pour le remplacer.</p>
+            <div class="field"><label class="field-label" for="m1">Poids <span class="field-unit">(kg)</span></label><input class="input" id="m1" type="text" inputmode="decimal" value="81,9"></div>
+            <div class="field"><label class="field-label" for="m2">Poitrine <span class="field-unit">(cm)</span></label><input class="input" id="m2" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m3">Biceps <span class="field-unit">(cm)</span></label><input class="input" id="m3" type="text" inputmode="decimal" value="34,5" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m4">Taille <span class="field-unit">(cm)</span></label><input class="input" id="m4" type="text" inputmode="decimal" value="96" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m5">Hanches <span class="field-unit">(cm)</span></label><input class="input" id="m5" type="text" inputmode="decimal" value="101" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m6">Cuisse <span class="field-unit">(cm)</span></label><input class="input" id="m6" type="text" inputmode="decimal" value=""></div>
+            <div class="field"><label class="field-label" for="m7">Mollet <span class="field-unit">(cm)</span></label><input class="input" id="m7" type="text" inputmode="decimal" value="39" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m8">Épaules <span class="field-unit">(cm)</span></label><input class="input" id="m8" type="text" inputmode="decimal" value="118" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m9">Masse grasse <span class="field-unit">(%)</span></label><input class="input" id="m9" type="text" inputmode="decimal" value="24,8" data-prefilled="true"></div>
+            <div class="field"><label class="field-label" for="m10">Masse musculaire <span class="field-unit">(%)</span></label><input class="input" id="m10" type="text" inputmode="decimal" value="36,2" data-prefilled="true"></div>
+            <hr class="sep">
+            <button class="btn" type="submit">Enregistrer</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="frame dark">
+        <p class="frame-tag">375 px · sombre · chargement + erreur</p>
+        <div class="viewport">
+          <div class="screen">
+            <p class="legend">&nbsp;</p>
+            <div class="field"><span class="field-label">Poids <span class="field-unit">(kg)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Poitrine <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <div class="field"><span class="field-label">Biceps <span class="field-unit">(cm)</span></span><span class="skeleton skeleton-input"></span></div>
+            <hr class="sep">
+            <div class="field">
+              <label class="field-label" for="n1">Taille <span class="field-unit">(cm)</span></label>
+              <input class="input error" id="n1" type="text" inputmode="decimal" value="500" aria-invalid="true" aria-describedby="n1-err">
+            </div>
+            <div class="field-error-row"><p class="field-error" id="n1-err">Valeur hors plage (30 à 200 cm).</p></div>
+            <div class="toast">Session du 2 août enregistrée.</div>
+          </div>
+        </div>
+        <p class="callout">Le <code>Skeleton</code> utilise <code>--muted</code> (0.269 en sombre) : il reste visible sur le fond sans devenir une barre pleine.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ I -->
+  <section class="section">
+    <h2 class="section-h">I · Gap ouvert — cible tactile 32 px vs 44 px</h2>
+    <p class="section-note">
+      <strong>Illustration d'un gap, pas une décision.</strong> Toutes les maquettes ci-dessus rendent la hauteur
+      <em>réelle</em> de l'<code>Input</code> de <code>radix-nova</code> : <code>h-8</code>, soit 32 px, sous le repère
+      iOS de 44 px. Le design system ne définit aucun token ni aucune règle de hauteur minimale de cible tactile. Sur dix
+      champs à enchaîner au doigt en 20 secondes, c'est le facteur d'échec le plus probable du critère 7. Poser un
+      <code>h-11</code> au cas par cas serait exactement l'improvisation que le dépôt interdit : à trancher, puis à
+      remonter dans <code>docs/design-system.md</code>.
+    </p>
+    <div class="frames">
+      <div class="frame">
+        <p class="frame-tag">375 px · comparaison</p>
+        <div class="viewport">
+          <div class="screen">
+            <p class="legend">Hauteur actuelle du preset — 32 px</p>
+            <div class="gap-row"><span class="field-label">Poids <span class="field-unit">(kg)</span></span><input class="input" type="text" inputmode="decimal" value="82,4" data-prefilled="true"></div>
+            <div class="gap-row"><span class="field-label">Poitrine <span class="field-unit">(cm)</span></span><input class="input" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="gap-row"><span class="field-label">Biceps <span class="field-unit">(cm)</span></span><input class="input" type="text" inputmode="decimal" value="34,5" data-prefilled="true"></div>
+            <hr class="sep">
+            <p class="legend">Repère iOS — 44 px</p>
+            <div class="gap-row"><span class="field-label">Poids <span class="field-unit">(kg)</span></span><input class="input input-44" type="text" inputmode="decimal" value="82,4" data-prefilled="true"></div>
+            <div class="gap-row"><span class="field-label">Poitrine <span class="field-unit">(cm)</span></span><input class="input input-44" type="text" inputmode="decimal" value="104" data-prefilled="true"></div>
+            <div class="gap-row"><span class="field-label">Biceps <span class="field-unit">(cm)</span></span><input class="input input-44" type="text" inputmode="decimal" value="34,5" data-prefilled="true"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  // Démonstration de deux critères d'acceptation — PAS l'implémentation.
+  document.querySelectorAll('input[data-prefilled]').forEach(function (el) {
+    el.addEventListener('input', function () { el.removeAttribute('data-prefilled'); });
+  });
+  document.querySelectorAll('.input').forEach(function (el) {
+    el.addEventListener('focus', function () { if (el.type !== 'date') el.select(); });
+  });
+</script>
+</body>
+</html>

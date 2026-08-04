@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — s03 Saisir une session de mesures</title>
+<style>
+/* =====================================================================
+   MAQUETTE DE RÉFÉRENCE — story s03-log-measurement-session
+   Ne pas copier en production. L'exécution reconstruit ces écrans avec
+   les vrais composants de src/components/ui/ (field, input, button,
+   item, empty, skeleton, spinner, sonner).
+
+   Les variables ci-dessous sont recopiées à l'identique depuis
+   src/app/globals.css. Aucune couleur, aucun rayon n'est inventé ici.
+   ===================================================================== */
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  --progress-favorable: oklch(0.55 0.12 152);
+  --progress-adverse: var(--destructive);
+  --label-min-size: 0.75rem;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* Geist n'est pas embarquée dans une maquette hors ligne : police système.
+     Dans l'app, --font-sans (Geist) et --font-mono viennent du preset. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Hauteur d'interaction composée par-dessus le registre (cible tactile iOS).
+     Voir « design system gap n°2 » dans le .md. */
+  --touch-h: 2.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --progress-favorable: oklch(0.7 0.14 152);
+    --progress-adverse: var(--destructive);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem 1rem 4rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------- Chrome de la maquette (n'existe pas dans l'app) ---------- */
+
+.doc-head { max-width: 60rem; margin: 0 auto 2rem; }
+.doc-head h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+.doc-head p { margin: 0 0 .5rem; color: var(--muted-foreground); font-size: .875rem; }
+.doc-head code { font-family: var(--font-mono); font-size: .8125rem; }
+
+.cases {
+  max-width: 60rem;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.case { width: min(375px, 100%); }
+.case-title {
+  font-size: .8125rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0 0 .25rem;
+}
+.case-note {
+  font-size: .8125rem;
+  color: var(--muted-foreground);
+  margin: 0 0 .625rem;
+}
+
+.frame {
+  width: 100%;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ---------- Écran ---------- */
+
+.screen { padding: 1rem; }
+
+.app-head { margin-bottom: 1.25rem; }
+.back {
+  display: inline-block;
+  font-size: .875rem;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  padding: .25rem 0;
+  margin-bottom: .25rem;
+}
+.title { font-size: 1.375rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+
+/* ---------- field / input (référence : composant `field` + `input`) ---------- */
+
+.field-group { display: flex; flex-direction: column; gap: 1.25rem; }
+.field { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.field-label { font-size: .875rem; font-weight: 500; line-height: 1.35; }
+
+.input {
+  width: 100%;
+  height: var(--touch-h);
+  padding: 0 .75rem;
+  font-family: inherit;
+  font-size: 1rem;           /* < 16px ⇒ iOS Safari zoome au focus */
+  color: var(--foreground);
+  background: transparent;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  outline: none;
+  min-width: 0;
+}
+.input:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+.input[aria-invalid="true"] { border-color: var(--destructive); }
+.input::placeholder { color: var(--muted-foreground); }
+
+.fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.legend { font-size: 1rem; font-weight: 500; margin-bottom: .75rem; padding: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem .75rem; }
+
+.sep { height: 1px; background: var(--border); border: 0; margin: 1.25rem 0; }
+
+.field-error { font-size: .875rem; color: var(--destructive); margin: 0; }
+.form-error {
+  font-size: .875rem;
+  color: var(--destructive);
+  margin: 0 0 .75rem;
+}
+
+/* ---------- button (référence : composant `button`) ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  height: var(--touch-h);
+  padding: 0 1rem;
+  font-family: inherit;
+  font-size: .9375rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-block { width: 100%; }
+.btn-primary { background: var(--primary); color: var(--primary-foreground); }
+.btn-outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+.btn[disabled] { opacity: .6; cursor: default; }
+
+.spinner { width: 1rem; height: 1rem; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- item (référence : composant `item`) ---------- */
+
+.item-group { display: flex; flex-direction: column; gap: .75rem; }
+.item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .75rem;
+  font-size: .875rem;
+}
+.item-title { font-weight: 500; font-size: .9375rem; margin-bottom: .5rem; }
+.kv { display: flex; flex-direction: column; gap: .125rem; }
+.kv > div { display: flex; justify-content: space-between; gap: .75rem; min-width: 0; }
+.k { color: var(--muted-foreground); font-size: .8125rem; }
+.v { font-family: var(--font-mono); font-size: .8125rem; white-space: nowrap; }
+
+/* ---------- empty (référence : composant `empty`) ---------- */
+
+.empty { text-align: center; padding: 2.5rem 1rem; }
+.empty-title { font-weight: 500; margin: 0 0 .375rem; }
+.empty-desc { color: var(--muted-foreground); font-size: .875rem; margin: 0 0 1.25rem; }
+
+/* ---------- skeleton (référence : composant `skeleton`) ---------- */
+
+.skel { background: var(--muted); border-radius: var(--radius-sm); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+.skel-item { border: 1px solid var(--border); border-radius: var(--radius-lg); padding: .75rem; }
+.skel-title { height: .875rem; width: 60%; margin-bottom: .75rem; }
+.skel-row { height: .75rem; width: 100%; margin-bottom: .5rem; }
+.skel-row.short { width: 45%; margin-bottom: 0; }
+
+/* ---------- sonner (référence : composant `sonner`) ---------- */
+
+.toast {
+  position: absolute;
+  left: 1rem; right: 1rem; bottom: 1rem;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: .75rem;
+  font-size: .875rem;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 12%);
+}
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>Maquette de référence — s03 · Saisir une session de mesures</h1>
+  <p>
+    <strong>Référence visuelle, pas du code de production.</strong> L'implémentation reconstruit ces écrans avec les
+    composants générés dans <code>src/components/ui/</code> : <code>field</code>, <code>input</code>,
+    <code>button</code>, <code>item</code>, <code>empty</code>, <code>skeleton</code>, <code>spinner</code>,
+    <code>sonner</code>.
+  </p>
+  <p>
+    Chaque cadre fait 375 px de large — la cible iOS Safari en portrait. Le thème suit
+    <code>prefers-color-scheme</code> : basculer le réglage du système bascule toute la page.
+    Toutes les couleurs et tous les rayons viennent des tokens de <code>src/app/globals.css</code>.
+  </p>
+  <p>
+    Les bornes chiffrées des messages d'erreur sont des <em>exemples</em> : les plages physiologiques réelles par
+    mesure sont une décision du Plan.
+  </p>
+</div>
+
+<div class="cases">
+
+  <!-- ============================================================= 1 -->
+  <section class="case">
+    <h2 class="case-title">1 · /saisie — état initial</h2>
+    <p class="case-note">
+      Date du jour (fuseau de l'appareil), 10 champs vides et optionnels. Aucun astérisque, aucun « requis »,
+      aucun placeholder : un champ vide se lit comme vide. Pas de pré-remplissage — c'est s05.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Retour</a>
+          <h1 class="title">Nouvelle session</h1>
+        </header>
+
+        <form>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="d1">Date</label>
+              <input class="input" id="d1" name="measured_on" type="date" value="2026-08-02">
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="w1">Poids (kg)</label>
+              <input class="input" id="w1" name="weight_kg" type="text" inputmode="decimal" autocomplete="off">
+            </div>
+          </div>
+
+          <hr class="sep">
+
+          <fieldset class="fieldset">
+            <legend class="legend">Mensurations (cm)</legend>
+            <div class="grid2">
+              <div class="field">
+                <label class="field-label" for="sh1">Épaules</label>
+                <input class="input" id="sh1" name="shoulders_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="ch1">Poitrine</label>
+                <input class="input" id="ch1" name="chest_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="bi1">Biceps</label>
+                <input class="input" id="bi1" name="biceps_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="wa1">Tour de taille</label>
+                <input class="input" id="wa1" name="waist_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="hi1">Hanches</label>
+                <input class="input" id="hi1" name="hips_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="th1">Cuisse</label>
+                <input class="input" id="th1" name="thigh_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="ca1">Mollet</label>
+                <input class="input" id="ca1" name="calf_cm" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+            </div>
+          </fieldset>
+
+          <hr class="sep">
+
+          <fieldset class="fieldset">
+            <legend class="legend">Composition (%)</legend>
+            <div class="grid2">
+              <div class="field">
+                <label class="field-label" for="fa1">Masse grasse</label>
+                <input class="input" id="fa1" name="body_fat_pct" type="text" inputmode="decimal" autocomplete="off">
+              </div>
+              <div class="field">
+                <label class="field-label" for="mu1">Masse musculaire</label>
+                <input class="input" id="mu1" name="muscle_pct" type="text" inputmode="decimal" autocomplete="off"
+                       enterkeyhint="done">
+              </div>
+            </div>
+          </fieldset>
+
+          <hr class="sep">
+
+          <button class="btn btn-primary btn-block" type="submit">Enregistrer la session</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 2 -->
+  <section class="case">
+    <h2 class="case-title">2 · /saisie — erreurs de validation serveur</h2>
+    <p class="case-note">
+      Erreurs <strong>par champ, sous le champ</strong>, jamais un résumé en haut de page. Les valeurs saisies sont
+      conservées : on corrige, on ne ressaisit pas. Les champs corrects restent intacts.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Retour</a>
+          <h1 class="title">Nouvelle session</h1>
+        </header>
+
+        <form>
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="d2">Date</label>
+              <input class="input" id="d2" type="date" value="2026-08-02">
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="w2">Poids (kg)</label>
+              <input class="input" id="w2" type="text" inputmode="decimal" value="-4" aria-invalid="true"
+                     aria-describedby="w2err">
+              <p class="field-error" id="w2err" role="alert">Le poids doit être compris entre 20 et 400 kg.</p>
+            </div>
+          </div>
+
+          <hr class="sep">
+
+          <fieldset class="fieldset">
+            <legend class="legend">Mensurations (cm)</legend>
+            <div class="grid2">
+              <div class="field">
+                <label class="field-label" for="sh2">Épaules</label>
+                <input class="input" id="sh2" type="text" inputmode="decimal" value="118">
+              </div>
+              <div class="field">
+                <label class="field-label" for="ch2">Poitrine</label>
+                <input class="input" id="ch2" type="text" inputmode="decimal" value="104">
+              </div>
+              <div class="field">
+                <label class="field-label" for="bi2">Biceps</label>
+                <input class="input" id="bi2" type="text" inputmode="decimal" value="36">
+              </div>
+              <div class="field">
+                <label class="field-label" for="wa2">Tour de taille</label>
+                <input class="input" id="wa2" type="text" inputmode="decimal" value="500" aria-invalid="true"
+                       aria-describedby="wa2err">
+                <p class="field-error" id="wa2err" role="alert">Le tour de taille doit être compris entre 30 et 200 cm.</p>
+              </div>
+              <div class="field">
+                <label class="field-label" for="hi2">Hanches</label>
+                <input class="input" id="hi2" type="text" inputmode="decimal" value="101">
+              </div>
+              <div class="field">
+                <label class="field-label" for="th2">Cuisse</label>
+                <input class="input" id="th2" type="text" inputmode="decimal" value="58">
+              </div>
+              <div class="field">
+                <label class="field-label" for="ca2">Mollet</label>
+                <input class="input" id="ca2" type="text" inputmode="decimal" value="38">
+              </div>
+            </div>
+          </fieldset>
+
+          <hr class="sep">
+
+          <fieldset class="fieldset">
+            <legend class="legend">Composition (%)</legend>
+            <div class="grid2">
+              <div class="field">
+                <label class="field-label" for="fa2">Masse grasse</label>
+                <input class="input" id="fa2" type="text" inputmode="decimal" value="124" aria-invalid="true"
+                       aria-describedby="fa2err">
+                <p class="field-error" id="fa2err" role="alert">Le pourcentage doit être compris entre 1 et 100.</p>
+              </div>
+              <div class="field">
+                <label class="field-label" for="mu2">Masse musculaire</label>
+                <input class="input" id="mu2" type="text" inputmode="decimal" value="38a" aria-invalid="true"
+                       aria-describedby="mu2err">
+                <p class="field-error" id="mu2err" role="alert">Valeur non reconnue. Utilisez des chiffres, avec une virgule si besoin (ex. 82,4).</p>
+              </div>
+            </div>
+          </fieldset>
+
+          <hr class="sep">
+
+          <button class="btn btn-primary btn-block" type="submit">Enregistrer la session</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 3 -->
+  <section class="case">
+    <h2 class="case-title">3 · /saisie — erreur de formulaire</h2>
+    <p class="case-note">
+      Formulaire entièrement vide, ou échec d'enregistrement : l'erreur n'appartient à aucun champ. Elle se place
+      juste au-dessus du bouton, dans le champ de vision de l'action — jamais en haut de page.
+      <em>(Design system gap n°3 : ce pattern est à acter.)</em>
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Retour</a>
+          <h1 class="title">Nouvelle session</h1>
+        </header>
+
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label" for="d3">Date</label>
+            <input class="input" id="d3" type="date" value="2026-08-02">
+          </div>
+          <div class="field">
+            <label class="field-label" for="w3">Poids (kg)</label>
+            <input class="input" id="w3" type="text" inputmode="decimal">
+          </div>
+        </div>
+
+        <hr class="sep">
+        <p class="case-note" style="margin:0 0 1.25rem">… (les 9 autres champs, tous vides) …</p>
+
+        <p class="form-error" role="alert">Renseignez au moins une mesure avant d'enregistrer.</p>
+        <button class="btn btn-primary btn-block" type="submit">Enregistrer la session</button>
+
+        <hr class="sep">
+        <p class="case-note" style="margin:0 0 .75rem">Variante — échec réseau ou serveur, même emplacement :</p>
+        <p class="form-error" role="alert">L'enregistrement a échoué. Vérifiez votre connexion et réessayez.</p>
+        <button class="btn btn-primary btn-block" type="submit">Enregistrer la session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 4 -->
+  <section class="case">
+    <h2 class="case-title">4 · /saisie — soumission en cours</h2>
+    <p class="case-note">
+      Bouton désactivé, <code>spinner</code> dans le bouton. Les champs restent lisibles et non désactivés.
+      Aucun recouvrement d'écran, aucun spinner plein écran.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Retour</a>
+          <h1 class="title">Nouvelle session</h1>
+        </header>
+
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label" for="d4">Date</label>
+            <input class="input" id="d4" type="date" value="2026-08-02">
+          </div>
+          <div class="field">
+            <label class="field-label" for="w4">Poids (kg)</label>
+            <input class="input" id="w4" type="text" inputmode="decimal" value="82,4">
+          </div>
+        </div>
+
+        <hr class="sep">
+        <p class="case-note" style="margin:0 0 1.25rem">… (les 9 autres champs) …</p>
+
+        <button class="btn btn-primary btn-block" type="submit" disabled aria-busy="true">
+          <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+          </svg>
+          Enregistrement…
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 5 -->
+  <section class="case">
+    <h2 class="case-title">5 · /historique — chargement</h2>
+    <p class="case-note">
+      Squelettes à la forme d'un <code>item</code> pendant le cold start Neon (~500 ms). Le bouton
+      « Nouvelle session » est déjà actif : on peut saisir sans attendre la base.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <a class="btn btn-primary btn-block" href="#" style="margin-bottom:1.25rem">Nouvelle session</a>
+
+        <div class="item-group" aria-busy="true" aria-live="polite">
+          <div class="skel-item">
+            <div class="skel skel-title"></div>
+            <div class="skel skel-row"></div>
+            <div class="skel skel-row short"></div>
+          </div>
+          <div class="skel-item">
+            <div class="skel skel-title"></div>
+            <div class="skel skel-row"></div>
+            <div class="skel skel-row short"></div>
+          </div>
+          <div class="skel-item">
+            <div class="skel skel-title"></div>
+            <div class="skel skel-row"></div>
+            <div class="skel skel-row short"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 6 -->
+  <section class="case">
+    <h2 class="case-title">6 · /historique — état vide</h2>
+    <p class="case-note">
+      Aucune session : <code>empty</code> avec l'action qui en sort. Jamais une page blanche.
+      Sans <code>EmptyMedia</code> : aucune icône n'est encore attribuée par le design system (gap n°4).
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+
+        <div class="empty">
+          <p class="empty-title">Aucune session enregistrée</p>
+          <p class="empty-desc">Vos mesures apparaîtront ici, de la plus récente à la plus ancienne.</p>
+          <a class="btn btn-primary" href="#">Saisir mes mesures</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 7 -->
+  <section class="case">
+    <h2 class="case-title">7 · /historique — erreur de lecture</h2>
+    <p class="case-note">
+      Message en clair, en français, disant quoi faire. Aucun code technique à l'écran.
+      <em>(Design system gap n°6 : conteneur à acter — <code>empty</code> ici, ou <code>alert</code>.)</em>
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <a class="btn btn-primary btn-block" href="#" style="margin-bottom:1.25rem">Nouvelle session</a>
+
+        <div class="empty" role="alert">
+          <p class="empty-title">Impossible de charger l'historique</p>
+          <p class="empty-desc">Vérifiez votre connexion et réessayez.</p>
+          <button class="btn btn-outline" type="button">Réessayer</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 8 -->
+  <section class="case">
+    <h2 class="case-title">8 · /historique — rempli + succès</h2>
+    <p class="case-note">
+      Tri du plus récent au plus ancien, intervalles irréguliers. Seules les mesures renseignées sont affichées :
+      la session du 26 juillet ne contenait qu'un poids. Aucun delta et aucune couleur de progression ici — c'est s06.
+      Les lignes ne sont pas cliquables : l'édition est s09. Le toast <code>sonner</code> confirme l'enregistrement
+      qui vient d'avoir lieu.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <a class="btn btn-primary btn-block" href="#" style="margin-bottom:1.25rem">Nouvelle session</a>
+
+        <div class="item-group">
+          <article class="item">
+            <h2 class="item-title">dimanche 2 août 2026</h2>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">82,4 kg</span></div>
+              <div><span class="k">Épaules</span><span class="v">118 cm</span></div>
+              <div><span class="k">Poitrine</span><span class="v">104 cm</span></div>
+              <div><span class="k">Biceps</span><span class="v">36 cm</span></div>
+              <div><span class="k">Tour de taille</span><span class="v">92,5 cm</span></div>
+              <div><span class="k">Hanches</span><span class="v">101 cm</span></div>
+              <div><span class="k">Cuisse</span><span class="v">58 cm</span></div>
+              <div><span class="k">Mollet</span><span class="v">38 cm</span></div>
+              <div><span class="k">Masse grasse</span><span class="v">24,1 %</span></div>
+              <div><span class="k">Masse musculaire</span><span class="v">38,6 %</span></div>
+            </div>
+          </article>
+
+          <article class="item">
+            <h2 class="item-title">dimanche 26 juillet 2026</h2>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">83,1 kg</span></div>
+            </div>
+          </article>
+
+          <article class="item">
+            <h2 class="item-title">dimanche 12 juillet 2026</h2>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">84,0 kg</span></div>
+              <div><span class="k">Tour de taille</span><span class="v">94 cm</span></div>
+              <div><span class="k">Poitrine</span><span class="v">105 cm</span></div>
+            </div>
+          </article>
+        </div>
+
+        <div style="height:4rem"></div>
+        <div class="toast" role="status">Session enregistrée</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

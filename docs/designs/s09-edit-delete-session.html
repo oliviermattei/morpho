@@ -1,0 +1,1094 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maquette — s09 Corriger une saisie (édition + suppression)</title>
+<style>
+/* =====================================================================
+   MAQUETTE DE RÉFÉRENCE — story s09-edit-delete-session
+   Ne pas copier en production. L'exécution reconstruit ces écrans avec
+   les vrais composants de src/components/ui/ (item, field, input,
+   button, alert-dialog, empty, skeleton, spinner, sonner).
+
+   Les variables ci-dessous sont recopiées à l'identique depuis
+   src/app/globals.css. Aucune couleur, aucun rayon n'est inventé ici.
+   Le vocabulaire CSS est celui de la maquette s03, repris tel quel :
+   s09 est un delta, pas un nouveau langage visuel.
+   ===================================================================== */
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  --progress-favorable: oklch(0.55 0.12 152);
+  --progress-adverse: var(--destructive);
+  --label-min-size: 0.75rem;
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* Geist n'est pas embarquée dans une maquette hors ligne : police système.
+     Dans l'app, --font-sans (Geist) et --font-mono viennent du preset. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Hauteur d'interaction composée par-dessus le registre (cible tactile iOS).
+     Voir « design system gap n°2 » dans le .md — NON couverte par le système. */
+  --touch-h: 2.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --progress-favorable: oklch(0.7 0.14 152);
+    --progress-adverse: var(--destructive);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+  }
+}
+
+/* Jeu sombre forcé, pour la section finale : le fichier doit montrer les
+   deux thèmes quel que soit le réglage de la machine qui l'ouvre. */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --progress-favorable: oklch(0.7 0.14 152);
+  --progress-adverse: var(--destructive);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 1.5rem 1rem 4rem;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------- Chrome de la maquette (n'existe pas dans l'app) ---------- */
+
+.doc-head { max-width: 62rem; margin: 0 auto 2rem; }
+.doc-head h1 { font-size: 1.25rem; margin: 0 0 .5rem; }
+.doc-head p { margin: 0 0 .5rem; color: var(--muted-foreground); font-size: .875rem; }
+.doc-head code { font-family: var(--font-mono); font-size: .8125rem; }
+
+.cases {
+  max-width: 62rem;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.case { width: min(375px, 100%); }
+.case-title {
+  font-size: .8125rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  margin: 0 0 .25rem;
+}
+.case-note {
+  font-size: .8125rem;
+  color: var(--muted-foreground);
+  margin: 0 0 .625rem;
+}
+
+.section-head {
+  max-width: 62rem;
+  margin: 2.5rem auto 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.section-head h2 { font-size: 1rem; margin: 0 0 .25rem; }
+.section-head p { margin: 0; color: var(--muted-foreground); font-size: .875rem; }
+
+.frame {
+  width: 100%;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ---------- Écran ---------- */
+
+.screen { padding: 1rem; }
+
+.app-head { margin-bottom: 1.25rem; }
+.back {
+  display: inline-block;
+  font-size: .875rem;
+  color: var(--muted-foreground);
+  text-decoration: none;
+  padding: .25rem 0;
+  margin-bottom: .25rem;
+}
+.title { font-size: 1.375rem; font-weight: 600; margin: 0; letter-spacing: -.01em; }
+.subtitle { font-size: .875rem; color: var(--muted-foreground); margin: .25rem 0 0; }
+
+/* ---------- field / input (référence : composants `field` + `input`) ---------- */
+
+.field-group { display: flex; flex-direction: column; gap: 1.25rem; }
+.field { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.field-label { font-size: .875rem; font-weight: 500; line-height: 1.35; }
+
+.input {
+  width: 100%;
+  height: var(--touch-h);
+  padding: 0 .75rem;
+  font-family: inherit;
+  font-size: 1rem;           /* < 16px ⇒ iOS Safari zoome au focus */
+  color: var(--foreground);
+  background: transparent;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  outline: none;
+  min-width: 0;
+}
+.input:focus-visible { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+.input[aria-invalid="true"] { border-color: var(--destructive); }
+.input::placeholder { color: var(--muted-foreground); }
+.input.focused { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+
+.fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.legend { font-size: 1rem; font-weight: 500; margin-bottom: .75rem; padding: 0; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem .75rem; }
+
+.sep { height: 1px; background: var(--border); border: 0; margin: 1.25rem 0; }
+
+/* FieldDescription : information neutre, jamais une alerte */
+.field-desc { font-size: .8125rem; color: var(--muted-foreground); margin: 0; }
+.form-desc { font-size: .875rem; color: var(--muted-foreground); margin: 0 0 .75rem; }
+
+/* FieldError : erreur par champ, ou erreur de formulaire au-dessus du bouton */
+.field-error { font-size: .875rem; color: var(--destructive); margin: 0; }
+.form-error { font-size: .875rem; color: var(--destructive); margin: 0 0 .75rem; }
+
+/* ---------- button (référence : composant `button`) ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  height: var(--touch-h);
+  padding: 0 1rem;
+  font-family: inherit;
+  font-size: .9375rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+}
+.btn-block { width: 100%; }
+.btn-primary { background: var(--primary); color: var(--primary-foreground); }
+.btn-outline { background: transparent; color: var(--foreground); border-color: var(--border); }
+/* variante `destructive` du preset radix-nova : fond translucide, pas un aplat */
+.btn-destructive {
+  background: color-mix(in oklch, var(--destructive) 10%, transparent);
+  color: var(--destructive);
+}
+.btn[disabled], .btn.is-disabled { opacity: .6; cursor: default; }
+
+.spinner { width: 1rem; height: 1rem; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- item (référence : composant `item`) ---------- */
+
+.item-group { display: flex; flex-direction: column; gap: .75rem; }
+.item {
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: .75rem;
+  font-size: .875rem;
+  color: inherit;
+  text-decoration: none;
+}
+/* Item asChild > Link : la ligne entière est la cible tactile */
+a.item:hover { background: var(--muted); }
+a.item.is-active { background: var(--muted); }
+a.item.is-focused { outline: none; border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent); }
+
+.item-head { display: flex; align-items: baseline; justify-content: space-between; gap: .75rem; margin-bottom: .5rem; }
+.item-title { font-weight: 500; font-size: .9375rem; }
+/* Affordance textuelle : pas un bouton, pas d'élément interactif imbriqué.
+   Un chevron serait la forme naturelle — gap « icônes » encore ouvert. */
+.item-action { font-size: .8125rem; color: var(--muted-foreground); white-space: nowrap; }
+
+.kv { display: flex; flex-direction: column; gap: .125rem; }
+.kv > div { display: flex; justify-content: space-between; gap: .75rem; min-width: 0; }
+.k { color: var(--muted-foreground); font-size: .8125rem; }
+.v { font-family: var(--font-mono); font-size: .8125rem; white-space: nowrap; }
+
+/* ---------- empty (référence : composant `empty`) ---------- */
+
+.empty { text-align: center; padding: 2.5rem 1rem; }
+.empty-title { font-weight: 500; margin: 0 0 .375rem; }
+.empty-desc { color: var(--muted-foreground); font-size: .875rem; margin: 0 0 1.25rem; }
+
+/* ---------- skeleton (référence : composant `skeleton`) ---------- */
+
+.skel { background: var(--muted); border-radius: var(--radius-sm); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: .5; } }
+.skel-input { height: var(--touch-h); width: 100%; border-radius: var(--radius-md); }
+
+/* ---------- sonner (référence : composant `sonner`) ---------- */
+
+.toast {
+  position: absolute;
+  left: 1rem; right: 1rem; bottom: 1rem;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: .75rem;
+  font-size: .875rem;
+  box-shadow: 0 4px 12px oklch(0 0 0 / 12%);
+}
+
+/* ---------- alert-dialog (référence : composant `alert-dialog`) ---------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: oklch(0 0 0 / 50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.dialog {
+  width: 100%;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  box-shadow: 0 8px 24px oklch(0 0 0 / 20%);
+}
+.dialog-title { font-size: 1rem; font-weight: 600; margin: 0 0 .5rem; line-height: 1.35; }
+.dialog-desc { font-size: .875rem; color: var(--muted-foreground); margin: 0 0 1.25rem; }
+.dialog-footer { display: flex; gap: .5rem; }
+.dialog-footer .btn { flex: 1 1 0; min-width: 0; }
+
+/* La zone de suppression, en fin de formulaire */
+.danger-note { font-size: .8125rem; color: var(--muted-foreground); margin: 0 0 .625rem; }
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>Maquette de référence — s09 · Corriger une saisie (édition + suppression)</h1>
+  <p>
+    <strong>Référence visuelle, pas du code de production.</strong> L'implémentation reconstruit ces écrans avec les
+    composants générés dans <code>src/components/ui/</code> : <code>item</code>, <code>field</code>,
+    <code>input</code>, <code>button</code>, <code>alert-dialog</code>, <code>empty</code>, <code>skeleton</code>,
+    <code>spinner</code>, <code>sonner</code>.
+  </p>
+  <p>
+    Chaque cadre fait 375 px de large — la cible iOS Safari en portrait. Le thème suit
+    <code>prefers-color-scheme</code> ; la dernière section force le thème sombre pour qu'il soit visible quel que
+    soit le réglage de la machine. Toutes les couleurs et tous les rayons viennent des tokens de
+    <code>src/app/globals.css</code>.
+  </p>
+  <p>
+    <strong>Le piège de la story, matérialisé ici :</strong> les valeurs affichées en édition sont celles
+    <em>réellement enregistrées</em>. Elles sont en <code>--foreground</code>, jamais grisées, et ne portent jamais
+    <code>data-prefilled</code> — contrairement au pré-remplissage de s05. Un champ vide reste vide.
+  </p>
+  <p>
+    Les bornes chiffrées des messages d'erreur sont des <em>exemples</em> : les plages physiologiques réelles par
+    mesure sont une décision du Plan. Session servant d'exemple : <strong>26 juillet 2026</strong>, 7 mesures
+    enregistrées (hanches, mollet et masse musculaire n'ont pas été prises ce jour-là).
+  </p>
+</div>
+
+<div class="cases">
+
+  <!-- ============================================================= 1 -->
+  <section class="case">
+    <h2 class="case-title">1 · /historique — lignes ouvrables (delta s09)</h2>
+    <p class="case-note">
+      s03 laissait les lignes non cliquables. s09 ouvre l'affordance et rien d'autre : la carte entière est un lien
+      vers l'édition, l'affordance est le mot « Modifier » en texte atténué. Aucun bouton de suppression ici.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <a class="btn btn-primary btn-block" href="#" style="margin-bottom:1.25rem">Nouvelle session</a>
+
+        <div class="item-group" role="list">
+          <a class="item" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 2 août 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">82,4 kg</span></div>
+              <div><span class="k">Épaules</span><span class="v">118 cm</span></div>
+              <div><span class="k">Poitrine</span><span class="v">104 cm</span></div>
+              <div><span class="k">Biceps</span><span class="v">34,5 cm</span></div>
+              <div><span class="k">Tour de taille</span><span class="v">96 cm</span></div>
+              <div><span class="k">Masse grasse</span><span class="v">24,8 %</span></div>
+            </div>
+          </a>
+
+          <a class="item" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 26 juillet 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">83,1 kg</span></div>
+              <div><span class="k">Épaules</span><span class="v">118 cm</span></div>
+              <div><span class="k">Poitrine</span><span class="v">104,5 cm</span></div>
+              <div><span class="k">Biceps</span><span class="v">34,5 cm</span></div>
+              <div><span class="k">Tour de taille</span><span class="v">97 cm</span></div>
+              <div><span class="k">Cuisse</span><span class="v">58,5 cm</span></div>
+              <div><span class="k">Masse grasse</span><span class="v">25,2 %</span></div>
+            </div>
+          </a>
+
+          <a class="item" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">samedi 18 juillet 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">83,9 kg</span></div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 2 -->
+  <section class="case">
+    <h2 class="case-title">2 · /historique — ligne au focus et ligne pressée</h2>
+    <p class="case-note">
+      Anneau <code>--ring</code> sur toute la carte (clavier, desktop) ; fond <code>--muted</code> à l'état actif,
+      pour que le tap soit accusé avant la navigation. Aucune couleur de progression : les deltas sont s06.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <div class="item-group" role="list">
+          <a class="item is-focused" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 2 août 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">82,4 kg</span></div>
+              <div><span class="k">Épaules</span><span class="v">118 cm</span></div>
+            </div>
+          </a>
+          <a class="item is-active" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 26 juillet 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">83,1 kg</span></div>
+              <div><span class="k">Épaules</span><span class="v">118 cm</span></div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 3 -->
+  <section class="case">
+    <h2 class="case-title">3 · /historique/[id] — chargement</h2>
+    <p class="case-note">
+      En-tête, libellés, séparateurs et boutons peints immédiatement ; un <code>Skeleton</code> à la hauteur exacte du
+      champ occupe chaque emplacement de valeur. Jamais de spinner plein écran (cold start Neon ~500 ms). Le bouton
+      de suppression est <strong>désactivé</strong> : on ne supprime pas ce qu'on n'a pas encore lu.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+          <h1 class="title">Modifier la session</h1>
+        </header>
+
+        <div class="field-group">
+          <div class="field">
+            <span class="field-label">Date</span>
+            <div class="skel skel-input"></div>
+          </div>
+          <div class="field">
+            <span class="field-label">Poids (kg)</span>
+            <div class="skel skel-input"></div>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="fieldset">
+          <p class="legend">Mensurations (cm)</p>
+          <div class="grid2">
+            <div class="field"><span class="field-label">Épaules</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Poitrine</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Biceps</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Tour de taille</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Hanches</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Cuisse</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Mollet</span><div class="skel skel-input"></div></div>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <div class="fieldset">
+          <p class="legend">Composition (%)</p>
+          <div class="grid2">
+            <div class="field"><span class="field-label">Masse grasse</span><div class="skel skel-input"></div></div>
+            <div class="field"><span class="field-label">Masse musculaire</span><div class="skel skel-input"></div></div>
+          </div>
+        </div>
+
+        <hr class="sep">
+
+        <button class="btn btn-primary btn-block" disabled>Enregistrer les modifications</button>
+
+        <hr class="sep">
+
+        <p class="danger-note">La suppression est définitive : la session et ses mesures ne seront pas récupérables.</p>
+        <button class="btn btn-destructive btn-block" disabled>Supprimer cette session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 4 -->
+  <section class="case">
+    <h2 class="case-title">4 · /historique/[id] — nominal</h2>
+    <p class="case-note">
+      Valeurs <strong>réellement enregistrées</strong>, en <code>--foreground</code>, sans <code>data-prefilled</code>
+      et sans grisé. Hanches, Mollet et Masse musculaire n'ont pas été mesurés ce jour-là : les champs restent
+      <strong>vides</strong>. La date est modifiable — une date mal tapée est exactement ce que cette story répare.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+          <h1 class="title">Modifier la session</h1>
+          <p class="subtitle">Enregistrée le 26 juillet 2026</p>
+        </header>
+
+        <form>
+          <p class="form-desc">Vider un champ retire cette mesure de la session.</p>
+
+          <div class="field-group">
+            <div class="field">
+              <label class="field-label" for="e-date">Date</label>
+              <input class="input" id="e-date" name="measured_on" type="date" value="2026-07-26">
+            </div>
+            <div class="field">
+              <label class="field-label" for="e-w">Poids (kg)</label>
+              <input class="input" id="e-w" name="weight_kg" type="text" inputmode="decimal" autocomplete="off" value="83,1">
+            </div>
+          </div>
+
+          <hr class="sep">
+
+          <fieldset class="fieldset">
+            <legend class="legend">Mensurations (cm)</legend>
+            <div class="grid2">
+              <div class="field">
+                <label class="field-label" for="e-sh">Épaules</label>
+                <input class="input" id="e-sh" type="text" inputmode="decimal" autocomplete="off" value="118">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-ch">Poitrine</label>
+                <input class="input" id="e-ch" type="text" inputmode="decimal" autocomplete="off" value="104,5">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-bi">Biceps</label>
+                <input class="input" id="e-bi" type="text" inputmode="decimal" autocomplete="off" value="34,5">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-wa">Tour de taille</label>
+                <input class="input" id="e-wa" type="text" inputmode="decimal" autocomplete="off" value="97">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-hi">Hanches</label>
+                <input class="input" id="e-hi" type="text" inputmode="decimal" autocomplete="off" value="">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-th">Cuisse</label>
+                <input class="input" id="e-th" type="text" inputmode="decimal" autocomplete="off" value="58,5">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-ca">Mollet</label>
+                <input class="input" id="e-ca" type="text" inputmode="decimal" autocomplete="off" value="">
+              </div>
+            </div>
+          </fieldset>
+
+          <hr class="sep">
+
+          <fieldset class="fieldset">
+            <legend class="legend">Composition (%)</legend>
+            <div class="grid2">
+              <div class="field">
+                <label class="field-label" for="e-bf">Masse grasse</label>
+                <input class="input" id="e-bf" type="text" inputmode="decimal" autocomplete="off" value="25,2">
+              </div>
+              <div class="field">
+                <label class="field-label" for="e-mm">Masse musculaire</label>
+                <input class="input" id="e-mm" type="text" inputmode="decimal" autocomplete="off" value="">
+              </div>
+            </div>
+          </fieldset>
+
+          <hr class="sep">
+
+          <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+        </form>
+
+        <hr class="sep">
+
+        <p class="danger-note">La suppression est définitive : la session et ses mesures ne seront pas récupérables.</p>
+        <button class="btn btn-destructive btn-block" type="button">Supprimer cette session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 5 -->
+  <section class="case">
+    <h2 class="case-title">5 · Édition — un champ vidé</h2>
+    <p class="case-note">
+      Le tour de taille portait <code>97</code> et vient d'être effacé. Une <code>FieldDescription</code> apparaît
+      sous le champ : « Cette mesure sera retirée. » En <code>--muted-foreground</code>, sans icône et sans rouge —
+      c'est l'effet voulu, pas une erreur. Retaper une valeur fait disparaître la ligne.
+      <em>(Haut du formulaire identique à l'état 4, tronqué ici.)</em>
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Mensurations (cm)</legend>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label" for="v-bi">Biceps</label>
+              <input class="input" id="v-bi" type="text" inputmode="decimal" value="34,5">
+            </div>
+            <div class="field">
+              <label class="field-label" for="v-wa">Tour de taille</label>
+              <input class="input focused" id="v-wa" type="text" inputmode="decimal" value="">
+              <p class="field-desc">Cette mesure sera retirée.</p>
+            </div>
+            <div class="field">
+              <label class="field-label" for="v-hi">Hanches</label>
+              <input class="input" id="v-hi" type="text" inputmode="decimal" value="">
+            </div>
+            <div class="field">
+              <label class="field-label" for="v-th">Cuisse</label>
+              <input class="input" id="v-th" type="text" inputmode="decimal" value="58,5">
+            </div>
+          </div>
+        </fieldset>
+        <p class="case-note" style="margin-top:.75rem">
+          Hanches était déjà vide à l'ouverture : aucune mention, il n'y a rien à retirer.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 6 -->
+  <section class="case">
+    <h2 class="case-title">6 · Édition — erreur de champ (retour serveur)</h2>
+    <p class="case-note">
+      <code>FieldError</code> sous le champ concerné, en <code>--destructive</code>, en français, sans code technique.
+      Les autres champs conservent leur valeur. Jamais de résumé d'erreurs en haut de page.
+      <strong>Les bornes sont des exemples.</strong>
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label" for="er-w">Poids (kg)</label>
+            <input class="input" id="er-w" type="text" inputmode="decimal" value="831" aria-invalid="true">
+            <p class="field-error">Le poids doit être compris entre 20 et 400 kg.</p>
+          </div>
+        </div>
+        <hr class="sep">
+        <fieldset class="fieldset">
+          <legend class="legend">Composition (%)</legend>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label" for="er-bf">Masse grasse</label>
+              <input class="input" id="er-bf" type="text" inputmode="decimal" value="252" aria-invalid="true">
+              <p class="field-error">Un pourcentage ne peut pas dépasser 100.</p>
+            </div>
+            <div class="field">
+              <label class="field-label" for="er-mm">Masse musculaire</label>
+              <input class="input" id="er-mm" type="text" inputmode="decimal" value="">
+            </div>
+          </div>
+        </fieldset>
+        <hr class="sep">
+        <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 7 -->
+  <section class="case">
+    <h2 class="case-title">7 · Édition — enregistrement en cours</h2>
+    <p class="case-note">
+      Bouton principal désactivé, <code>Spinner</code> + « Enregistrement… ». Les champs restent lisibles et non
+      désactivés. Le bouton de suppression est désactivé le temps de l'opération. Aucun recouvrement d'écran.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label" for="s-w">Poids (kg)</label>
+            <input class="input" id="s-w" type="text" inputmode="decimal" value="82,9">
+          </div>
+        </div>
+        <hr class="sep">
+        <button class="btn btn-primary btn-block" disabled>
+          <svg class="spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" stroke-opacity=".3"></circle>
+            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+          </svg>
+          Enregistrement…
+        </button>
+        <hr class="sep">
+        <p class="danger-note">La suppression est définitive : la session et ses mesures ne seront pas récupérables.</p>
+        <button class="btn btn-destructive btn-block" disabled>Supprimer cette session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 8 -->
+  <section class="case">
+    <h2 class="case-title">8 · Confirmation de suppression — dialogue ouvert</h2>
+    <p class="case-note">
+      <code>alert-dialog</code>, imposé par le design system pour une action destructive. Le titre <strong>nomme la
+      session</strong> par sa date ; la description chiffre ce qu'on perd. « Annuler » porte le focus initial ;
+      <code>Échap</code> et le clic sur l'overlay ferment sans agir. Pas d'<code>AlertDialogMedia</code> : aucune
+      icône n'est encore attribuée.
+    </p>
+    <div class="frame">
+      <div class="screen" aria-hidden="true">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+          <h1 class="title">Modifier la session</h1>
+          <p class="subtitle">Enregistrée le 26 juillet 2026</p>
+        </header>
+        <div class="field-group">
+          <div class="field">
+            <span class="field-label">Poids (kg)</span>
+            <input class="input" type="text" value="83,1" readonly>
+          </div>
+        </div>
+        <hr class="sep">
+        <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+        <hr class="sep">
+        <p class="danger-note">La suppression est définitive : la session et ses mesures ne seront pas récupérables.</p>
+        <button class="btn btn-destructive btn-block" type="button">Supprimer cette session</button>
+      </div>
+
+      <div class="overlay">
+        <div class="dialog" role="alertdialog" aria-modal="true" aria-labelledby="dlg-t" aria-describedby="dlg-d">
+          <h2 class="dialog-title" id="dlg-t">Supprimer la session du 26 juillet 2026 ?</h2>
+          <p class="dialog-desc" id="dlg-d">
+            Cette session et ses 7 mesures seront définitivement supprimées. Cette action est irréversible.
+          </p>
+          <div class="dialog-footer">
+            <button class="btn btn-outline is-focused" type="button"
+                    style="box-shadow:0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);border-color:var(--ring)">
+              Annuler
+            </button>
+            <button class="btn btn-destructive" type="button">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 9 -->
+  <section class="case">
+    <h2 class="case-title">9 · Confirmation — suppression en cours</h2>
+    <p class="case-note">
+      Les deux boutons désactivés, <code>Spinner</code> + « Suppression… » dans l'action. Le dialogue reste ouvert :
+      rien ne bouge sous les doigts tant que le serveur n'a pas répondu.
+    </p>
+    <div class="frame">
+      <div class="screen" aria-hidden="true">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+          <h1 class="title">Modifier la session</h1>
+        </header>
+        <div class="field-group">
+          <div class="field">
+            <span class="field-label">Poids (kg)</span>
+            <input class="input" type="text" value="83,1" readonly>
+          </div>
+        </div>
+        <hr class="sep">
+        <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+      </div>
+
+      <div class="overlay">
+        <div class="dialog" role="alertdialog" aria-modal="true">
+          <h2 class="dialog-title">Supprimer la session du 26 juillet 2026 ?</h2>
+          <p class="dialog-desc">
+            Cette session et ses 7 mesures seront définitivement supprimées. Cette action est irréversible.
+          </p>
+          <div class="dialog-footer">
+            <button class="btn btn-outline" type="button" disabled>Annuler</button>
+            <button class="btn btn-destructive" type="button" disabled>
+              <svg class="spinner" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.5" stroke-opacity=".3"></circle>
+                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"></path>
+              </svg>
+              Suppression…
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 10 -->
+  <section class="case">
+    <h2 class="case-title">10 · Échec d'enregistrement ou de suppression</h2>
+    <p class="case-note">
+      <code>FieldError</code> non rattaché à un champ, juste au-dessus du bouton concerné — le pattern posé par s03.
+      Le dialogue s'est fermé, rien n'est perdu, l'écran reste utilisable. Message en clair, aucun code HTTP.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <div class="field-group">
+          <div class="field">
+            <span class="field-label">Poids (kg)</span>
+            <input class="input" type="text" value="82,9" readonly>
+          </div>
+        </div>
+        <hr class="sep">
+        <p class="form-error">L'enregistrement a échoué. Vérifiez votre connexion et réessayez.</p>
+        <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+        <hr class="sep">
+        <p class="danger-note">La suppression est définitive : la session et ses mesures ne seront pas récupérables.</p>
+        <p class="form-error">La suppression a échoué. Vérifiez votre connexion et réessayez.</p>
+        <button class="btn btn-destructive btn-block" type="button">Supprimer cette session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 11 -->
+  <section class="case">
+    <h2 class="case-title">11 · Session introuvable ou non autorisée</h2>
+    <p class="case-note">
+      <strong>Un accès croisé rend exactement le même écran qu'une session inexistante</strong> : ne rien divulguer est
+      la position par défaut. Conteneur <code>Empty</code>, sans <code>EmptyMedia</code> (gap « icônes »). Le choix
+      technique 404 / 403 reste une décision du Plan.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+        </header>
+        <div class="empty">
+          <p class="empty-title">Session introuvable</p>
+          <p class="empty-desc">Elle a peut-être été supprimée.</p>
+          <a class="btn btn-primary" href="#">Retour à l'historique</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= 12 -->
+  <section class="case">
+    <h2 class="case-title">12 · Après suppression — retour à l'historique</h2>
+    <p class="case-note">
+      Retour à la liste, jamais un maintien sur un écran dont la session vient d'être détruite. La preuve est la liste
+      elle-même ; le toast <code>sonner</code> n'est que le confirmateur discret. <strong>Aucune action « Annuler »</strong>
+      dans le toast : la suppression est définitive, un undo impliquerait une suppression logique et donc un ADR.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <a class="btn btn-primary btn-block" href="#" style="margin-bottom:1.25rem">Nouvelle session</a>
+        <div class="item-group" role="list">
+          <a class="item" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 2 août 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">82,4 kg</span></div>
+              <div><span class="k">Épaules</span><span class="v">118 cm</span></div>
+            </div>
+          </a>
+          <a class="item" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">samedi 18 juillet 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">83,9 kg</span></div>
+            </div>
+          </a>
+        </div>
+        <div style="height:4rem"></div>
+      </div>
+      <div class="toast" role="status">Session supprimée</div>
+    </div>
+    <p class="case-note" style="margin-top:.625rem">
+      Après un enregistrement, même écran avec le toast « Modifications enregistrées » et la session corrigée à sa
+      place dans la liste.
+    </p>
+  </section>
+
+  <!-- ============================================================= 13 -->
+  <section class="case">
+    <h2 class="case-title">13 · Suppression de la dernière session</h2>
+    <p class="case-note">
+      Le chemin le plus facile à oublier : l'historique retombe sur l'état <code>Empty</code> de s03. Pas d'écran mort,
+      pas de liste à zéro élément. La silhouette (s06) retourne au même moment à son état initial.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <div class="empty">
+          <p class="empty-title">Aucune session enregistrée</p>
+          <p class="empty-desc">Vos mesures apparaîtront ici, de la plus récente à la plus ancienne.</p>
+          <a class="btn btn-primary" href="#">Saisir mes mesures</a>
+        </div>
+      </div>
+      <div class="toast" role="status">Session supprimée</div>
+    </div>
+  </section>
+
+</div>
+
+<div class="section-head">
+  <h2>Thème sombre forcé</h2>
+  <p>
+    Mêmes écrans, jeu de tokens <code>.dark</code> appliqué explicitement. Points à vérifier : la bordure de l'Item
+    (<code>oklch(1 0 0 / 10%)</code>), le fond du dialogue (<code>--popover</code>, distinct de
+    <code>--background</code> en sombre seulement) et le bouton <code>destructive</code> translucide, dont le
+    contraste n'est encadré par aucune règle du design system.
+  </p>
+</div>
+
+<div class="cases dark">
+
+  <!-- ============================================================= D1 -->
+  <section class="case">
+    <h2 class="case-title">D1 · Édition — nominal (sombre)</h2>
+    <p class="case-note">
+      Les valeurs enregistrées restent en <code>--foreground</code> pleine encre. Aucun grisé, aucun
+      <code>data-prefilled</code> : le contraste avec le pré-remplissage de s05 doit rester lisible dans les deux
+      thèmes.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+          <h1 class="title">Modifier la session</h1>
+          <p class="subtitle">Enregistrée le 26 juillet 2026</p>
+        </header>
+        <p class="form-desc">Vider un champ retire cette mesure de la session.</p>
+        <div class="field-group">
+          <div class="field">
+            <label class="field-label" for="d-date">Date</label>
+            <input class="input" id="d-date" type="date" value="2026-07-26">
+          </div>
+          <div class="field">
+            <label class="field-label" for="d-w">Poids (kg)</label>
+            <input class="input" id="d-w" type="text" inputmode="decimal" value="83,1">
+          </div>
+        </div>
+        <hr class="sep">
+        <fieldset class="fieldset">
+          <legend class="legend">Mensurations (cm)</legend>
+          <div class="grid2">
+            <div class="field">
+              <label class="field-label" for="d-sh">Épaules</label>
+              <input class="input" id="d-sh" type="text" inputmode="decimal" value="118">
+            </div>
+            <div class="field">
+              <label class="field-label" for="d-ch">Poitrine</label>
+              <input class="input" id="d-ch" type="text" inputmode="decimal" value="104,5">
+            </div>
+            <div class="field">
+              <label class="field-label" for="d-hi">Hanches</label>
+              <input class="input" id="d-hi" type="text" inputmode="decimal" value="">
+            </div>
+            <div class="field">
+              <label class="field-label" for="d-th">Cuisse</label>
+              <input class="input" id="d-th" type="text" inputmode="decimal" value="58,5">
+            </div>
+          </div>
+        </fieldset>
+        <hr class="sep">
+        <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+        <hr class="sep">
+        <p class="danger-note">La suppression est définitive : la session et ses mesures ne seront pas récupérables.</p>
+        <button class="btn btn-destructive btn-block" type="button">Supprimer cette session</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= D2 -->
+  <section class="case">
+    <h2 class="case-title">D2 · Confirmation de suppression (sombre)</h2>
+    <p class="case-note">
+      <code>--destructive</code> passe à <code>oklch(0.704 0.191 22.216)</code> en sombre, sur un fond
+      <code>--popover</code> à <code>oklch(0.205 0 0)</code>, avec un remplissage translucide à 10 %. C'est le point de
+      contraste le plus fragile de la story.
+    </p>
+    <div class="frame">
+      <div class="screen" aria-hidden="true">
+        <header class="app-head">
+          <a class="back" href="#">‹ Historique</a>
+          <h1 class="title">Modifier la session</h1>
+          <p class="subtitle">Enregistrée le 26 juillet 2026</p>
+        </header>
+        <div class="field-group">
+          <div class="field">
+            <span class="field-label">Poids (kg)</span>
+            <input class="input" type="text" value="83,1" readonly>
+          </div>
+        </div>
+        <hr class="sep">
+        <button class="btn btn-primary btn-block" type="button">Enregistrer les modifications</button>
+      </div>
+      <div class="overlay">
+        <div class="dialog" role="alertdialog" aria-modal="true">
+          <h2 class="dialog-title">Supprimer la session du 26 juillet 2026 ?</h2>
+          <p class="dialog-desc">
+            Cette session et ses 7 mesures seront définitivement supprimées. Cette action est irréversible.
+          </p>
+          <div class="dialog-footer">
+            <button class="btn btn-outline" type="button"
+                    style="box-shadow:0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);border-color:var(--ring)">
+              Annuler
+            </button>
+            <button class="btn btn-destructive" type="button">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================= D3 -->
+  <section class="case">
+    <h2 class="case-title">D3 · Historique — lignes ouvrables (sombre)</h2>
+    <p class="case-note">
+      La bordure de l'Item tombe à <code>oklch(1 0 0 / 10%)</code> : c'est la raison du
+      <code>variant="outline"</code> hérité de s03, la variante <code>default</code> ayant une bordure transparente,
+      invisible sur les deux fonds.
+    </p>
+    <div class="frame">
+      <div class="screen">
+        <header class="app-head">
+          <h1 class="title">Historique</h1>
+        </header>
+        <div class="item-group" role="list">
+          <a class="item" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 2 août 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">82,4 kg</span></div>
+              <div><span class="k">Tour de taille</span><span class="v">96 cm</span></div>
+            </div>
+          </a>
+          <a class="item is-active" href="#" role="listitem">
+            <div class="item-head">
+              <span class="item-title">dimanche 26 juillet 2026</span>
+              <span class="item-action">Modifier</span>
+            </div>
+            <div class="kv">
+              <div><span class="k">Poids</span><span class="v">83,1 kg</span></div>
+              <div><span class="k">Tour de taille</span><span class="v">97 cm</span></div>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

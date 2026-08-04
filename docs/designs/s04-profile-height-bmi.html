@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>morpho — s04 · Profil (taille) et affichage de l'IMC</title>
+<style>
+/* ------------------------------------------------------------------
+   TOKENS — recopiés de morpho/docs/design-system.md, rien d'inventé.
+   Aucune valeur hexadécimale : uniquement les tokens du design system.
+   ------------------------------------------------------------------ */
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --progress-favorable: oklch(0.55 0.12 152);
+  --progress-adverse: var(--destructive);
+
+  --label-min-size: 0.75rem;
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+
+  /* Le mockup ne charge aucun asset externe : Geist n'est pas disponible ici.
+     En production, --font-sans vient du preset radix-nova. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 10%);
+    --ring: oklch(0.556 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --progress-favorable: oklch(0.7 0.14 152);
+  }
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---------- Chrome de la page de référence (hors produit) ---------- */
+.sheet { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+.sheet > header { border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+.sheet h1 { font-size: 1.375rem; margin: 0 0 8px; }
+.sheet .note { color: var(--muted-foreground); font-size: 0.875rem; margin: 0; }
+.state { margin: 40px 0 0; }
+.state > h2 {
+  font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted-foreground); margin: 0 0 4px; font-weight: 600;
+}
+.state > p.why { color: var(--muted-foreground); font-size: 0.875rem; margin: 0 0 12px; max-width: 60ch; }
+.frames { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
+
+/* Cadre 375 px — la largeur de référence des critères d'acceptation */
+.phone {
+  width: 375px; max-width: 100%;
+  border: 1px solid var(--border); border-radius: var(--radius-xl);
+  background: var(--background); overflow: hidden; position: relative;
+}
+.phone-tag {
+  font-size: var(--label-min-size); color: var(--muted-foreground);
+  padding: 6px 12px; border-bottom: 1px solid var(--border); background: var(--muted);
+}
+
+/* ---------- Primitives : reflets des composants shadcn, pas du code ---------- */
+.appbar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; }
+.appbar h3 { font-size: 1.125rem; margin: 0; font-weight: 600; }
+.btn-ghost {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-md);
+  border: 0; background: transparent; color: var(--foreground); cursor: pointer;
+}
+.btn-ghost:hover { background: var(--secondary); }
+.screen { padding: 4px 16px 20px; display: flex; flex-direction: column; gap: 20px; }
+
+.fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.legend { font-size: 0.875rem; font-weight: 600; padding: 0; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 0.875rem; font-weight: 500; }
+.input {
+  width: 100%; height: 40px; padding: 0 12px;
+  border: 1px solid var(--input); border-radius: var(--radius-md);
+  background: var(--background); color: var(--foreground);
+  font: inherit; font-size: 1rem;
+}
+.input::placeholder { color: var(--muted-foreground); }
+.input.focused { outline: 2px solid var(--ring); outline-offset: 2px; }
+.input.invalid { border-color: var(--destructive); }
+.field-desc { font-size: var(--label-min-size); color: var(--muted-foreground); }
+.field-error { font-size: var(--label-min-size); color: var(--destructive); display: flex; gap: 6px; align-items: flex-start; }
+
+.btn {
+  width: 100%; min-height: 40px; padding: 0 16px;
+  border: 0; border-radius: var(--radius-md);
+  background: var(--primary); color: var(--primary-foreground);
+  font: inherit; font-size: 0.9375rem; font-weight: 500;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer;
+}
+.btn[disabled] { opacity: 0.6; cursor: default; }
+.btn-outline { background: transparent; color: var(--foreground); border: 1px solid var(--border); }
+.btn-auto { width: auto; }
+
+.card {
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--card); color: var(--card-foreground);
+  padding: 16px; display: flex; flex-direction: column; gap: 4px;
+}
+.card-title { font-size: 0.875rem; color: var(--muted-foreground); font-weight: 500; }
+.card-value { font-size: 2rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.card-sub { font-size: var(--label-min-size); color: var(--muted-foreground); }
+
+.empty {
+  border: 1px dashed var(--border); border-radius: var(--radius-lg);
+  padding: 20px 16px; text-align: center;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+}
+.empty-title { font-size: 0.9375rem; font-weight: 600; }
+.empty-desc { font-size: 0.875rem; color: var(--muted-foreground); max-width: 30ch; }
+
+.skeleton { background: var(--muted); border-radius: var(--radius-sm); }
+.sk-line { height: 12px; }
+.sk-input { height: 40px; border-radius: var(--radius-md); }
+.sk-card { height: 96px; border-radius: var(--radius-lg); }
+
+.spinner { width: 16px; height: 16px; animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+.toast {
+  position: absolute; left: 12px; right: 12px; bottom: 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--card); color: var(--card-foreground);
+  padding: 12px 14px; font-size: 0.875rem;
+}
+
+/* Grille « poids / IMC / pourcentages » de l'accueil (s06) — contexte, pas le sujet */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.tiles .span-2 { grid-column: 1 / -1; }
+.silhouette-stub {
+  border: 1px dashed var(--border); border-radius: var(--radius-lg);
+  color: var(--muted-foreground); font-size: var(--label-min-size);
+  height: 140px; display: flex; align-items: center; justify-content: center; text-align: center;
+}
+
+/* Ligne d'historique (composant item, livré par s03) */
+.item {
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
+}
+.item + .item { margin-top: 8px; }
+.item-date { font-size: 0.875rem; font-weight: 600; }
+.item-values { font-size: var(--label-min-size); color: var(--muted-foreground); }
+.item-bmi { color: var(--foreground); font-weight: 600; }
+
+.callout {
+  border-left: 3px solid var(--border); padding: 4px 0 4px 12px;
+  color: var(--muted-foreground); font-size: 0.8125rem; max-width: 62ch; margin-top: 12px;
+}
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header>
+  <h1>morpho — s04 · Écran de profil (taille) et affichage de l'IMC</h1>
+  <p class="note">
+    Référence visuelle, pas du code de production. Tous les cadres font 375 px de large (iOS Safari, portrait).
+    La page suit le thème système : basculez le thème de votre OS pour voir les deux jeux de tokens.
+    Aucune couleur en dur, aucun asset externe.
+  </p>
+</header>
+
+<!-- ================= A. ÉCRAN DE PROFIL ================= -->
+
+<section class="state">
+  <h2>A1 · Profil — état vide (aucune taille enregistrée)</h2>
+  <p class="why">Champ vide avec placeholder. L'emplacement de la carte IMC porte une invitation courte, sans bouton : l'action est le champ juste au-dessus.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · /profil · première visite</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <label class="field-label" for="h1">Taille (cm)</label>
+            <input class="input" id="h1" type="text" inputmode="decimal" placeholder="175">
+            <p class="field-desc">Sert uniquement au calcul de l'IMC. Elle n'apparaît ni sur la silhouette ni dans les graphes. Videz le champ pour retirer l'IMC.</p>
+          </div>
+          <button class="btn">Enregistrer</button>
+        </fieldset>
+        <div class="empty">
+          <p class="empty-title">Pas encore d'IMC</p>
+          <p class="empty-desc">Votre IMC apparaîtra ici dès que votre taille sera enregistrée.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="callout">Le texte « Videz le champ pour retirer l'IMC » suppose que l'effacement est autorisé — question 7 de la Research, <strong>non tranchée</strong>. Si /ks-plan décide l'inverse, seule cette phrase change.</p>
+</section>
+
+<section class="state">
+  <h2>A2 · Profil — chargement (cold start Neon, ~500 ms)</h2>
+  <p class="why">Squelette à la forme exacte du contenu attendu. Jamais d'écran d'attente bloquant, jamais de spinner plein écran.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · /profil · chargement</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <div class="skeleton sk-line" style="width:88px"></div>
+            <div class="skeleton sk-input"></div>
+            <div class="skeleton sk-line" style="width:100%"></div>
+            <div class="skeleton sk-line" style="width:64%"></div>
+          </div>
+          <button class="btn" disabled>Enregistrer</button>
+        </fieldset>
+        <div class="skeleton sk-card"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>A3 · Profil — taille renseignée (succès de lecture)</h2>
+  <p class="why">La carte « IMC actuel » rend visible sur place le critère « modifier la taille recalcule tout l'historique ». Aucune classification, aucune couleur de progression.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · /profil · taille = 175</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <label class="field-label" for="h3">Taille (cm)</label>
+            <input class="input" id="h3" type="text" inputmode="decimal" value="175">
+            <p class="field-desc">Sert uniquement au calcul de l'IMC. Elle n'apparaît ni sur la silhouette ni dans les graphes.</p>
+          </div>
+          <button class="btn">Enregistrer</button>
+        </fieldset>
+        <div class="card">
+          <p class="card-title">IMC actuel</p>
+          <p class="card-value">23,6</p>
+          <p class="card-sub">d'après 72,4 kg, le 2 août</p>
+          <p class="card-sub">Recalculé sur vos 14 sessions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>A4 · Profil — enregistrement en cours</h2>
+  <p class="why">Spinner dans le bouton, libellé explicite, champ conservé et lisible. Rien d'autre n'est bloqué.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · /profil · soumission</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <label class="field-label" for="h4">Taille (cm)</label>
+            <input class="input focused" id="h4" type="text" inputmode="decimal" value="178">
+            <p class="field-desc">Sert uniquement au calcul de l'IMC.</p>
+          </div>
+          <button class="btn" disabled>
+            <svg class="spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            Enregistrement…
+          </button>
+        </fieldset>
+        <div class="card">
+          <p class="card-title">IMC actuel</p>
+          <p class="card-value">23,6</p>
+          <p class="card-sub">d'après 72,4 kg, le 2 août</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>A5 · Profil — erreurs</h2>
+  <p class="why">Erreur par champ, sous le champ, jamais un résumé en haut de page ni un code technique. L'erreur serveur occupe la même zone et ne perd pas la saisie.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · valeur hors plage</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <label class="field-label" for="h5">Taille (cm)</label>
+            <input class="input invalid" id="h5" type="text" inputmode="decimal" value="1750" aria-invalid="true">
+            <p class="field-error" role="alert">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-top:2px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              Indiquez une taille entre 80 et 260 cm.
+            </p>
+            <p class="field-desc">Bornes à confirmer en /ks-plan — valeurs d'exemple.</p>
+          </div>
+          <button class="btn">Enregistrer</button>
+        </fieldset>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="phone-tag">375 px · erreur serveur / réseau</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <label class="field-label" for="h6">Taille (cm)</label>
+            <input class="input" id="h6" type="text" inputmode="decimal" value="178">
+            <p class="field-error" role="alert">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-top:2px"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+              Enregistrement impossible pour l'instant. Réessayez.
+            </p>
+          </div>
+          <button class="btn">Enregistrer</button>
+        </fieldset>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>A6 · Profil — succès (taille modifiée 175 → 178)</h2>
+  <p class="why">Toast sonner discret et non bloquant. La carte se met à jour immédiatement : c'est le retour visuel du recalcul de tout l'historique.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · /profil · après enregistrement</div>
+      <div class="appbar">
+        <button class="btn-ghost" aria-label="Retour">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <h3>Profil</h3>
+      </div>
+      <div class="screen" style="padding-bottom:72px">
+        <fieldset class="fieldset">
+          <legend class="legend">Taille de référence</legend>
+          <div class="field">
+            <label class="field-label" for="h7">Taille (cm)</label>
+            <input class="input" id="h7" type="text" inputmode="decimal" value="178">
+            <p class="field-desc">Sert uniquement au calcul de l'IMC.</p>
+          </div>
+          <button class="btn">Enregistrer</button>
+        </fieldset>
+        <div class="card">
+          <p class="card-title">IMC actuel</p>
+          <p class="card-value">22,9</p>
+          <p class="card-sub">d'après 72,4 kg, le 2 août</p>
+          <p class="card-sub">Recalculé sur vos 14 sessions.</p>
+        </div>
+      </div>
+      <div class="toast">Taille enregistrée.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= B. AFFICHAGE DE L'IMC ================= -->
+
+<section class="state">
+  <h2>B1 · Accueil — carte IMC (poids et taille présents)</h2>
+  <p class="why">L'IMC prend place dans la bande hors silhouette, à côté du poids. Valeur seule, format français, une décimale. Aucune couleur, aucun delta, aucune classification — le sens « favorable » de l'IMC n'est pas déclaré.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · accueil (s06) · zone hors silhouette</div>
+      <div class="screen" style="padding-top:16px">
+        <div class="silhouette-stub">silhouette (s06) — hors périmètre de cette story</div>
+        <div class="tiles">
+          <div class="card">
+            <p class="card-title">Poids</p>
+            <p class="card-value">72,4</p>
+            <p class="card-sub">kg · le 2 août</p>
+          </div>
+          <div class="card">
+            <p class="card-title">IMC</p>
+            <p class="card-value">23,6</p>
+            <p class="card-sub">d'après 72,4 kg, le 2 août</p>
+          </div>
+          <div class="card">
+            <p class="card-title">Masse grasse</p>
+            <p class="card-value">18,2</p>
+            <p class="card-sub">% · le 2 août</p>
+          </div>
+          <div class="card">
+            <p class="card-title">Masse musculaire</p>
+            <p class="card-value">41,0</p>
+            <p class="card-sub">% · le 2 août</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>B2 · Accueil — aucune taille renseignée</h2>
+  <p class="why">Aucune valeur vide ni fausse : un état vide qui invite, avec l'action qui en sort. C'est le <strong>seul</strong> endroit où l'invitation apparaît.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · accueil · taille absente</div>
+      <div class="screen" style="padding-top:16px">
+        <div class="silhouette-stub">silhouette (s06) — hors périmètre de cette story</div>
+        <div class="tiles">
+          <div class="card">
+            <p class="card-title">Poids</p>
+            <p class="card-value">72,4</p>
+            <p class="card-sub">kg · le 2 août</p>
+          </div>
+          <div class="empty">
+            <p class="empty-title">IMC indisponible</p>
+            <p class="empty-desc">Renseignez votre taille pour le calculer.</p>
+            <button class="btn btn-outline btn-auto">Renseigner ma taille</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>B3 · Accueil — chargement de la carte IMC</h2>
+  <p class="why">Squelette à la forme de la carte, pas de spinner.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · accueil · chargement</div>
+      <div class="screen" style="padding-top:16px">
+        <div class="tiles">
+          <div class="skeleton sk-card"></div>
+          <div class="skeleton sk-card"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>B4 · Accueil — aucune session comportant un poids</h2>
+  <p class="why">Pas de carte IMC du tout : il n'y a rien à calculer, et renseigner la taille n'y changerait rien. L'orientation vers la saisie est portée par l'état initial de l'accueil (s06), pas dupliquée ici.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · accueil · aucun poids</div>
+      <div class="screen" style="padding-top:16px">
+        <div class="silhouette-stub">silhouette (s06) — état initial</div>
+        <div class="empty">
+          <p class="empty-title">Aucune mesure enregistrée</p>
+          <p class="empty-desc">État initial porté par s06. Aucune carte IMC n'est rendue.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="state">
+  <h2>B5 · Historique — l'IMC en fin de ligne de session</h2>
+  <p class="why">Deuxième surface d'affichage, portée par le composant <code>item</code> livré par s03. Une session sans poids n'affiche <strong>rien</strong> : ni tiret, ni zéro. Aucune invitation répétée ligne par ligne.</p>
+  <div class="frames">
+    <div class="phone">
+      <div class="phone-tag">375 px · historique · taille renseignée</div>
+      <div class="screen" style="padding-top:16px">
+        <div class="item">
+          <p class="item-date">2 août 2026</p>
+          <p class="item-values">72,4 kg · taille 84 cm · poitrine 101 cm · <span class="item-bmi">IMC 23,6</span></p>
+        </div>
+        <div class="item">
+          <p class="item-date">26 juillet 2026</p>
+          <p class="item-values">biceps 34 cm · cuisse 56 cm</p>
+        </div>
+        <div class="item">
+          <p class="item-date">19 juillet 2026</p>
+          <p class="item-values">73,1 kg · taille 85 cm · <span class="item-bmi">IMC 23,9</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone">
+      <div class="phone-tag">375 px · historique · aucune taille</div>
+      <div class="screen" style="padding-top:16px">
+        <div class="item">
+          <p class="item-date">2 août 2026</p>
+          <p class="item-values">72,4 kg · taille 84 cm · poitrine 101 cm</p>
+        </div>
+        <div class="item">
+          <p class="item-date">26 juillet 2026</p>
+          <p class="item-values">biceps 34 cm · cuisse 56 cm</p>
+        </div>
+        <div class="item">
+          <p class="item-date">19 juillet 2026</p>
+          <p class="item-values">73,1 kg · taille 85 cm</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="callout">La ligne du 26 juillet ne comporte pas de poids : aucun IMC, dans les deux cas. Dans le cadre de droite, la taille manque : l'IMC disparaît partout, sans message par ligne.</p>
+</section>
+
+<section class="state">
+  <h2>Rappel des règles appliquées</h2>
+  <p class="why">
+    Aucune couleur en dur ni valeur arbitraire : tous les tons viennent des tokens du design system.
+    <code>--progress-favorable</code> et <code>--progress-adverse</code> ne sont <strong>pas</strong> utilisés ici : le sens « favorable » de l'IMC n'est déclaré nulle part, et pas de sens déclaré = pas de couleur.
+    Aucune classification médicale n'est affichée. L'IMC n'est jamais un champ.
+    Toutes les valeurs sont métriques et formatées à la française (<code>23,6</code>).
+  </p>
+</section>
+
+</div>
+</body>
+</html>
