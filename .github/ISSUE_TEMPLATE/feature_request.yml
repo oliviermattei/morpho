@@ -1,0 +1,54 @@
+name: Feature request
+description: Suggest an idea or improvement
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea! morpho is built spec-first (see
+        [CONTRIBUTING.md](../blob/main/CONTRIBUTING.md)): an accepted request
+        becomes a story and a plan before any code is written. Describing the
+        problem well is the most valuable part.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: The situation you're in, not the solution you have in mind.
+      placeholder: I measure my neck every week but there's no field for it, so I keep it in a note ...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      placeholder: Add a `neck_cm` measurement kind with a body-map zone ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Home screen / body map
+        - Entry
+        - Charts
+        - History
+        - Profile / onboarding
+        - Auth
+        - PWA / offline
+        - Data model
+        - Docs
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to work on it?
+      options:
+        - label: I'd be willing to open a PR for this.

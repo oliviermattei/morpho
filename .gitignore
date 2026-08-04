@@ -28,6 +28,9 @@
 # production
 /build
 
+# local editor/agent tooling (launch configs, local settings)
+/.claude/
+
 # misc
 .DS_Store
 *.pem

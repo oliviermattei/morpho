@@ -1,0 +1,73 @@
+name: Bug report
+description: Report something that isn't working as expected
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report! Please fill out the
+        sections below so we can reproduce and fix the issue quickly.
+
+        **Never paste real measurements, emails, connection strings or auth
+        secrets** into a public issue — redact them.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight checklist
+      options:
+        - label: I have searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am running the latest `main`.
+          required: true
+        - label: My report contains no secrets and no real personal data.
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear description of the bug and what you expected instead.
+      placeholder: After saving a session with only a weight, the body map shows 0 cm instead of ...
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in
+        2. Open /saisie
+        3. Fill only "Poids" and save
+        4. Go back to the home screen
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Commit / deployment
+      description: The commit SHA or deployment you're running.
+      placeholder: "7235ab4"
+    validations:
+      required: true
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where does it happen?
+      options:
+        - Browser (mobile)
+        - Browser (desktop)
+        - Installed PWA
+        - Local dev server
+        - Tests / CI
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser & OS
+      placeholder: "iOS 19 Safari / Chrome 141 on macOS"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Server logs, console errors, screenshots. Redact anything personal.
