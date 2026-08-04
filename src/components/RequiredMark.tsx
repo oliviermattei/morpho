@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { FieldLabel } from "@/components/ui/field";
 
 /**
- * The mandatory-field marker, and the legend that explains it.
+ * The mandatory-field marker.
  *
  * Before this, nothing on any form said which fields were mandatory —
  * the constraint existed only in the Zod schemas, so the first time a
@@ -15,15 +15,14 @@ import { FieldLabel } from "@/components/ui/field";
  * email *" for anything that reads a label by its text — including
  * Testing Library's getByLabelText, which is how this project asserts
  * its forms. aria-hidden would have spared a screen reader but not that.
- * Colour never carries the information alone (design-system.md): the
- * glyph does, and the legend names it in words.
+ *
+ * It inherits the label's colour rather than carrying its own: the
+ * convention is universal enough that a per-form legend spelling it out
+ * was noise, and a red glyph next to an untouched field read as an
+ * error the user had not made yet.
  */
 export function RequiredMark() {
-  return (
-    <span aria-hidden="true" className="text-destructive">
-      *
-    </span>
-  );
+  return <span aria-hidden="true">*</span>;
 }
 
 /**
@@ -44,15 +43,5 @@ export function RequiredFieldLabel({
       <FieldLabel htmlFor={htmlFor}>{children}</FieldLabel>
       <RequiredMark />
     </div>
-  );
-}
-
-export function RequiredLegend() {
-  return (
-    <p className="flex items-center gap-1 text-sm text-muted-foreground">
-      <span>Les champs marqués</span>
-      <RequiredMark />
-      <span>sont obligatoires.</span>
-    </p>
   );
 }

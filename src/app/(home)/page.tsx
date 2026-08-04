@@ -5,7 +5,6 @@ import { deriveTransformationPhase } from "@/lib/home-summary";
 import { daysSince } from "@/lib/onboarding";
 import { requireOnboarded } from "@/lib/onboarding-gate";
 import { routes } from "@/lib/routes";
-import { BodyMapLegend } from "@/components/BodyMapLegend";
 import { BodySilhouette } from "@/components/BodySilhouette";
 import { BottomNav } from "@/components/BottomNav";
 import { HomeHeader } from "@/components/HomeHeader";
@@ -109,7 +108,6 @@ export default async function Home() {
           view. */}
       <main className="flex flex-1 flex-col gap-3 px-4 pb-28">
         <BodySilhouette view={view} sex={profile.sex} />
-        <BodyMapLegend />
         <StatCards view={view} />
 
         {hasNoMeasurementSessionEver && (

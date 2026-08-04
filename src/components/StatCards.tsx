@@ -1,6 +1,6 @@
 import type { BodyMapView, ViewEntry } from "@/lib/body-map-view";
 import { MEASUREMENT_CATALOG_BY_KIND } from "@/lib/measurements";
-import { thirdLine, verdictGlyph } from "@/lib/measurement-display";
+import { thirdLine } from "@/lib/measurement-display";
 
 const NONE_ENTRY: ViewEntry = {
   state: "none",
@@ -51,7 +51,6 @@ function DeltaPill({ entry }: { entry: ViewEntry }) {
       data-delta-pill
       className={`mt-1.5 inline-block rounded-full px-2 py-0.5 text-label-min font-semibold tabular-nums ${tint}`}
     >
-      {verdictGlyph(entry.verdict)}
       {entry.deltaText}
     </p>
   );

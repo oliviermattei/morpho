@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { DatePickerField } from "@/components/DatePickerField";
-import { RequiredFieldLabel, RequiredLegend } from "@/components/RequiredMark";
+import { RequiredFieldLabel } from "@/components/RequiredMark";
 import { cn } from "@/lib/utils";
 import { todayIsoDate } from "@/lib/date";
 import { focusFirstInvalidField } from "@/lib/form-focus";
@@ -504,8 +504,6 @@ export function MeasurementSessionForm(props: MeasurementSessionFormProps) {
       className="flex flex-col gap-6"
       noValidate
     >
-      <RequiredLegend />
-
       <Field data-invalid={dateFieldErrors ? true : undefined}>
         <RequiredFieldLabel htmlFor="measuredOn">Date</RequiredFieldLabel>
         <DatePickerField

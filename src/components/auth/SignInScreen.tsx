@@ -2,9 +2,11 @@
 
 import { Fragment, type FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { TriangleAlert } from "lucide-react";
+import { MailCheck, TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
+import { RESET_PASSWORD_PATH } from "@/lib/auth-routes";
+import { messageForCode, readErrorCode } from "@/lib/auth-errors";
 import { MIN_PASSWORD_LENGTH, passwordSchema } from "@/lib/password";
 import { focusFirstInvalidField } from "@/lib/form-focus";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,7 @@ import {
 } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { RequiredFieldLabel, RequiredLegend } from "@/components/RequiredMark";
+import { RequiredFieldLabel } from "@/components/RequiredMark";
 
 // ADR 019: email + password replaces the magic link as the only sign-in
 // path. Neon Auth's beta wraps Better Auth verbatim, and its credential
@@ -35,75 +37,7 @@ const emailSchema = z.email("Cette adresse email n'est pas valide.");
 // /profil gained its own "changer mon mot de passe" form — one rule, one
 // definition, imported by both screens.
 
-const NETWORK_FAILURE_MESSAGE = "Vérifiez votre connexion et réessayez.";
-
-const WRONG_CREDENTIALS_MESSAGE = "Email ou mot de passe incorrect.";
-const ACCOUNT_TAKEN_MESSAGE = "Un compte existe déjà avec cette adresse email.";
-
-// Error codes mapped to French. The snake_case codes are Neon Auth's own
-// taxonomy (AuthErrorCode in
-// node_modules/@neondatabase/auth/dist/better-auth-helpers-*.mjs), NOT
-// Better Auth's: the SDK normalizes every upstream failure into an
-// AuthApiError before the app sees it. Confirmed on the live server — a
-// wrong password arrives as `invalid_credentials`, never as Better Auth's
-// own `INVALID_EMAIL_OR_PASSWORD`, which is what the route handler returns
-// one layer below. The SCREAMING_SNAKE entries are kept as a safety net for
-// the `{ error }` tuple path, which does not go through the normalizer.
-//
-// Anything unlisted falls back to the retry message: a code we don't know
-// about is still a failure the user can only retry.
-const ERROR_MESSAGES: Record<string, string> = {
-  // Neon Auth normalized codes
-  invalid_credentials: WRONG_CREDENTIALS_MESSAGE,
-  // Deliberately the same message as a wrong password: on the sign-in
-  // screen, distinguishing them would tell an attacker which addresses
-  // have an account here.
-  user_not_found: WRONG_CREDENTIALS_MESSAGE,
-  user_already_exists: ACCOUNT_TAKEN_MESSAGE,
-  email_exists: ACCOUNT_TAKEN_MESSAGE,
-  email_address_invalid: "Cette adresse email n'est pas valide.",
-  email_not_confirmed: "Cette adresse email n'est pas encore vérifiée.",
-  weak_password: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.`,
-  validation_failed: "Vérifiez les informations saisies.",
-  over_request_rate_limit:
-    "Trop de tentatives. Réessayez dans quelques minutes.",
-  session_expired: "Votre session a expiré. Reconnectez-vous.",
-  session_not_found: "Votre session a expiré. Reconnectez-vous.",
-  // Better Auth raw codes, in case a call resolves with `{ error }`
-  // instead of rejecting
-  INVALID_EMAIL_OR_PASSWORD: WRONG_CREDENTIALS_MESSAGE,
-  USER_ALREADY_EXISTS: ACCOUNT_TAKEN_MESSAGE,
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: ACCOUNT_TAKEN_MESSAGE,
-  PASSWORD_TOO_SHORT: `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.`,
-  PASSWORD_TOO_LONG: "Ce mot de passe est trop long.",
-  EMAIL_NOT_VERIFIED: "Cette adresse email n'est pas encore vérifiée.",
-  CREDENTIAL_ACCOUNT_NOT_FOUND: WRONG_CREDENTIALS_MESSAGE,
-};
-
-/**
- * Digs the Better Auth error code out of whatever the SDK rejected with.
- * A rejected sign-in surfaces as an APIError whose code sits either on the
- * object itself or one level down under `body`/`error`; a genuine network
- * failure rejects with a plain TypeError and no code at all, which maps to
- * the retry message.
- */
-function readErrorCode(thrown: unknown): { code?: string } {
-  if (typeof thrown !== "object" || thrown === null) return {};
-  const candidates: unknown[] = [
-    thrown,
-    (thrown as { body?: unknown }).body,
-    (thrown as { error?: unknown }).error,
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === "object" && candidate !== null) {
-      const { code } = candidate as { code?: unknown };
-      if (typeof code === "string") return { code };
-    }
-  }
-  return {};
-}
-
-type Mode = "sign-in" | "sign-up";
+type Mode = "sign-in" | "sign-up" | "forgot";
 
 const COPY: Record<
   Mode,
@@ -114,6 +48,7 @@ const COPY: Record<
     pending: string;
     switchPrompt: string;
     switchAction: string;
+    switchTo: Mode;
     failureTitle: string;
   }
 > = {
@@ -124,6 +59,7 @@ const COPY: Record<
     pending: "Connexion…",
     switchPrompt: "Pas encore de compte ?",
     switchAction: "Créer un compte",
+    switchTo: "sign-up",
     failureTitle: "La connexion a échoué",
   },
   "sign-up": {
@@ -133,7 +69,18 @@ const COPY: Record<
     pending: "Création…",
     switchPrompt: "Vous avez déjà un compte ?",
     switchAction: "Se connecter",
+    switchTo: "sign-in",
     failureTitle: "La création du compte a échoué",
+  },
+  forgot: {
+    title: "Mot de passe oublié",
+    subtitle: "Entrez votre email : vous recevrez un lien de réinitialisation.",
+    submit: "Envoyer le lien",
+    pending: "Envoi…",
+    switchPrompt: "Vous vous en souvenez ?",
+    switchAction: "Se connecter",
+    switchTo: "sign-in",
+    failureTitle: "L'envoi a échoué",
   },
 };
 
@@ -147,14 +94,16 @@ export function SignInScreen() {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [resetLinkSent, setResetLinkSent] = useState(false);
 
   const copy = COPY[mode];
 
-  function switchMode() {
-    setMode(mode === "sign-in" ? "sign-up" : "sign-in");
+  function goToMode(next: Mode) {
+    setMode(next);
     setEmailError(null);
     setPasswordError(null);
     setOperationError(null);
+    setResetLinkSent(false);
   }
 
   async function submit(validEmail: string, validPassword: string) {
@@ -177,23 +126,40 @@ export function SignInScreen() {
               email: validEmail,
               password: validPassword,
             })
-          : await authClient.signUp.email({
-              email: validEmail,
-              password: validPassword,
-              // Better Auth requires a name on sign-up. morpho is a
-              // single-person app and never displays it, so asking for one
-              // would be a field with no purpose — derive it from the
-              // address rather than invent a screen for it.
-              name: validEmail.split("@")[0] ?? validEmail,
-            }));
+          : mode === "forgot"
+            ? await authClient.requestPasswordReset({
+                email: validEmail,
+                // Where the link in the mail lands. The auth server
+                // consumes its own /reset-password/<token> URL first and
+                // redirects here with `?token=`, so this must be the screen
+                // that asks for the new password, not the sign-in screen.
+                redirectTo: `${window.location.origin}${RESET_PASSWORD_PATH}`,
+              })
+            : await authClient.signUp.email({
+                email: validEmail,
+                password: validPassword,
+                // Better Auth requires a name on sign-up. morpho is a
+                // single-person app and never displays it, so asking for one
+                // would be a field with no purpose — derive it from the
+                // address rather than invent a screen for it.
+                name: validEmail.split("@")[0] ?? validEmail,
+              }));
     } catch (thrown) {
       error = readErrorCode(thrown);
     }
 
     if (error) {
-      setOperationError(
-        (error.code && ERROR_MESSAGES[error.code]) ?? NETWORK_FAILURE_MESSAGE,
-      );
+      setOperationError(messageForCode(error.code));
+      setIsPending(false);
+      return;
+    }
+
+    // Nothing to navigate to: no session was opened. The server answers the
+    // same way whether or not the address has an account — deliberately, so
+    // the screen cannot be used to test which addresses exist — so the
+    // confirmation says "if an account exists" rather than promising a mail.
+    if (mode === "forgot") {
+      setResetLinkSent(true);
       setIsPending(false);
       return;
     }
@@ -211,6 +177,10 @@ export function SignInScreen() {
     event.preventDefault();
 
     const parsedEmail = emailSchema.safeParse(email);
+    // The reset request carries no password — the whole point is that the
+    // user does not have one to give. Validating the empty field would
+    // refuse a form that is complete.
+    const needsPassword = mode !== "forgot";
     const parsedPassword = passwordSchema.safeParse(password);
 
     setEmailError(
@@ -220,23 +190,27 @@ export function SignInScreen() {
             "Cette adresse email n'est pas valide."),
     );
     setPasswordError(
-      parsedPassword.success
+      !needsPassword || parsedPassword.success
         ? null
         : (parsedPassword.error.issues[0]?.message ??
             `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.`),
     );
 
-    if (!parsedEmail.success || !parsedPassword.success) {
+    const passwordRefused = needsPassword && !parsedPassword.success;
+    if (!parsedEmail.success || passwordRefused) {
       // Both fields are above the fold on this screen, so the scroll is
       // usually a no-op — the focus is the point: the refused field is
       // where the caret lands, so correcting it takes no aiming.
       focusFirstInvalidField(["email", "password"], (fieldId) =>
-        fieldId === "email" ? !parsedEmail.success : !parsedPassword.success,
+        fieldId === "email" ? !parsedEmail.success : passwordRefused,
       );
       return;
     }
 
-    void submit(parsedEmail.data, parsedPassword.data);
+    void submit(
+      parsedEmail.data,
+      parsedPassword.success ? parsedPassword.data : "",
+    );
   }
 
   return (
@@ -257,7 +231,17 @@ export function SignInScreen() {
             <AlertDescription>{operationError}</AlertDescription>
           </Alert>
         )}
-        <RequiredLegend />
+        {resetLinkSent && (
+          <Alert>
+            <MailCheck />
+            <AlertTitle>Vérifiez votre boîte mail</AlertTitle>
+            <AlertDescription>
+              Si un compte existe pour {email}, un lien de réinitialisation
+              vient d&apos;y être envoyé. Il n&apos;est valable qu&apos;une
+              fois.
+            </AlertDescription>
+          </Alert>
+        )}
         <Field data-invalid={emailError ? true : undefined}>
           <RequiredFieldLabel htmlFor="email">
             Adresse email
@@ -285,34 +269,54 @@ export function SignInScreen() {
           />
           <FieldError>{emailError}</FieldError>
         </Field>
-        <Field data-invalid={passwordError ? true : undefined}>
-          <RequiredFieldLabel htmlFor="password">
-            Mot de passe
-          </RequiredFieldLabel>
-          <Input
-            id="password"
-            name="password"
-            required
-            type="password"
-            autoComplete={
-              mode === "sign-in" ? "current-password" : "new-password"
-            }
-            className="h-11 text-base md:text-sm"
-            aria-invalid={passwordError ? true : undefined}
-            disabled={isPending}
-            value={password}
-            onChange={(event) => {
-              setPassword(event.target.value);
-              if (passwordError) setPasswordError(null);
-            }}
-          />
-          {mode === "sign-up" && !passwordError && (
-            <FieldDescription>
-              {MIN_PASSWORD_LENGTH} caractères minimum.
-            </FieldDescription>
-          )}
-          <FieldError>{passwordError}</FieldError>
-        </Field>
+        {mode !== "forgot" && (
+          <Field data-invalid={passwordError ? true : undefined}>
+            <RequiredFieldLabel htmlFor="password">
+              Mot de passe
+            </RequiredFieldLabel>
+            <Input
+              id="password"
+              name="password"
+              required
+              type="password"
+              autoComplete={
+                mode === "sign-in" ? "current-password" : "new-password"
+              }
+              className="h-11 text-base md:text-sm"
+              aria-invalid={passwordError ? true : undefined}
+              disabled={isPending}
+              value={password}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                if (passwordError) setPasswordError(null);
+              }}
+            />
+            {mode === "sign-up" && !passwordError && (
+              <FieldDescription>
+                {MIN_PASSWORD_LENGTH} caractères minimum.
+              </FieldDescription>
+            )}
+            <FieldError>{passwordError}</FieldError>
+          </Field>
+        )}
+        {mode === "sign-in" && (
+          // Under the field it rescues, not at the bottom of the screen: the
+          // user reaches for it at the moment the password fails them. It
+          // sits OUTSIDE the Field on purpose — `orientation="vertical"`
+          // stretches every direct child to w-full (ui/field.tsx), which
+          // would centre this link across the whole form.
+          <div className="-mt-1 flex justify-end">
+            <Button
+              type="button"
+              variant="link"
+              className="h-auto p-0 text-sm font-normal text-muted-foreground"
+              disabled={isPending}
+              onClick={() => goToMode("forgot")}
+            >
+              Mot de passe oublié ?
+            </Button>
+          </div>
+        )}
         <Button type="submit" className="h-11 w-full" disabled={isPending}>
           {isPending ? (
             <>
@@ -330,7 +334,7 @@ export function SignInScreen() {
           variant="link"
           className="h-auto p-0 text-sm"
           disabled={isPending}
-          onClick={switchMode}
+          onClick={() => goToMode(copy.switchTo)}
         >
           {copy.switchAction}
         </Button>

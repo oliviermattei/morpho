@@ -2,6 +2,27 @@
   "name": "morpho",
   "version": "0.1.0",
   "private": true,
+  "description": "Self-hosted PWA to track weight and body measurements — body map, deltas since day one, charts.",
+  "license": "MIT",
+  "author": "Olivier Mattei",
+  "homepage": "https://github.com/oliviermattei/morpho#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/oliviermattei/morpho.git"
+  },
+  "bugs": {
+    "url": "https://github.com/oliviermattei/morpho/issues"
+  },
+  "keywords": [
+    "pwa",
+    "nextjs",
+    "health",
+    "body-measurements",
+    "weight-tracker",
+    "self-hosted",
+    "drizzle",
+    "neon"
+  ],
   "scripts": {
     "dev": "next dev",
     "build": "next build",

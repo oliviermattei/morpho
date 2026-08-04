@@ -43,6 +43,14 @@ export const config = {
     // precache glob (public/**/*), so a service worker installing on a
     // cold session would have cached the redirect instead of the SVG.
     // Nothing about a body outline is private.
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|serwist|icons|silhouettes|~offline|api/(?!auth)).*)",
+    //
+    // /auth/reset-password is excluded for a reason of the same kind, and
+    // it was verified as a real 307 before this exclusion existed: the
+    // whole point of that screen is that it is reached WITHOUT a session,
+    // from a link in a mail. The middleware only knows about `loginUrl`
+    // (/auth/sign-in), which it lets through to avoid a redirect loop —
+    // there is no publicPaths option to declare a second one, so the
+    // matcher is the only place to say it.
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|serwist|icons|silhouettes|~offline|auth/reset-password|api/(?!auth)).*)",
   ],
 };

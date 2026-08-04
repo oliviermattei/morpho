@@ -78,7 +78,7 @@ describe("BodySilhouette", () => {
     const deltaLine = container.querySelector(
       '[data-zone-third-line].text-progress-favorable',
     );
-    expect(deltaLine?.textContent).toBe("▲ −7,4 cm");
+    expect(deltaLine?.textContent).toBe("−7,4 cm");
   });
 
   // Each label needs a line pointing at the body it annotates. One per

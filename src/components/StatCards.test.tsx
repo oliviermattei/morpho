@@ -46,7 +46,7 @@ describe("StatCards", () => {
 
     expect(screen.getByText("82,4 kg")).toBeInTheDocument();
     const pill = container.querySelector("[data-delta-pill]");
-    expect(pill?.textContent).toBe("▲ −3,2 kg");
+    expect(pill?.textContent).toBe("−3,2 kg");
     expect(pill?.className).toContain("text-progress-favorable");
   });
 
@@ -65,7 +65,7 @@ describe("StatCards", () => {
     );
 
     const pill = container.querySelector("[data-delta-pill]");
-    expect(pill?.textContent).toBe("▼ +2,1 pts");
+    expect(pill?.textContent).toBe("+2,1 pts");
     expect(pill?.className).toContain("text-progress-adverse");
   });
 

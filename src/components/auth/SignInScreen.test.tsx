@@ -2,10 +2,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const { signInEmailMock, signUpEmailMock } = vi.hoisted(() => ({
-  signInEmailMock: vi.fn(),
-  signUpEmailMock: vi.fn(),
-}));
+const { signInEmailMock, signUpEmailMock, requestPasswordResetMock } =
+  vi.hoisted(() => ({
+    signInEmailMock: vi.fn(),
+    signUpEmailMock: vi.fn(),
+    requestPasswordResetMock: vi.fn(),
+  }));
 const { replaceMock, refreshMock } = vi.hoisted(() => ({
   replaceMock: vi.fn(),
   refreshMock: vi.fn(),
@@ -15,6 +17,7 @@ vi.mock("@/lib/auth-client", () => ({
   authClient: {
     signIn: { email: signInEmailMock },
     signUp: { email: signUpEmailMock },
+    requestPasswordReset: requestPasswordResetMock,
   },
 }));
 
@@ -36,6 +39,7 @@ describe("SignInScreen", () => {
   beforeEach(() => {
     signInEmailMock.mockReset();
     signUpEmailMock.mockReset();
+    requestPasswordResetMock.mockReset();
     replaceMock.mockReset();
     refreshMock.mockReset();
   });
@@ -264,5 +268,97 @@ describe("SignInScreen", () => {
     await user.click(screen.getByRole("button", { name: "Créer un compte" }));
 
     expect(screen.queryByText("Email ou mot de passe incorrect.")).toBeNull();
+  });
+
+  describe("forgotten password", () => {
+    async function openForgotMode(user: ReturnType<typeof userEvent.setup>) {
+      await user.click(
+        screen.getByRole("button", { name: "Mot de passe oublié ?" }),
+      );
+    }
+
+    it("drops the password field: there is no password to give", async () => {
+      const user = userEvent.setup();
+      render(<SignInScreen />);
+
+      await openForgotMode(user);
+
+      expect(
+        screen.getByRole("heading", { name: "Mot de passe oublié" }),
+      ).toBeInTheDocument();
+      expect(screen.getByLabelText("Adresse email")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Mot de passe")).toBeNull();
+    });
+
+    it("sends the request with the address and the reset screen as redirect", async () => {
+      requestPasswordResetMock.mockResolvedValue({ data: {}, error: null });
+      const user = userEvent.setup();
+      render(<SignInScreen />);
+
+      await openForgotMode(user);
+      await user.type(screen.getByLabelText("Adresse email"), EMAIL);
+      await user.click(screen.getByRole("button", { name: "Envoyer le lien" }));
+
+      await waitFor(() =>
+        expect(requestPasswordResetMock).toHaveBeenCalledWith({
+          email: EMAIL,
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        }),
+      );
+      // No session was opened: nothing to navigate to.
+      expect(replaceMock).not.toHaveBeenCalled();
+      expect(
+        await screen.findByText("Vérifiez votre boîte mail"),
+      ).toBeInTheDocument();
+    });
+
+    it("refuses an invalid address without calling the server", async () => {
+      const user = userEvent.setup();
+      render(<SignInScreen />);
+
+      await openForgotMode(user);
+      await user.type(screen.getByLabelText("Adresse email"), "not-an-email");
+      await user.click(screen.getByRole("button", { name: "Envoyer le lien" }));
+
+      expect(
+        await screen.findByText("Cette adresse email n'est pas valide."),
+      ).toBeInTheDocument();
+      expect(requestPasswordResetMock).not.toHaveBeenCalled();
+    });
+
+    it("maps a rejected request to a French message", async () => {
+      requestPasswordResetMock.mockRejectedValue({
+        code: "over_request_rate_limit",
+      });
+      const user = userEvent.setup();
+      render(<SignInScreen />);
+
+      await openForgotMode(user);
+      await user.type(screen.getByLabelText("Adresse email"), EMAIL);
+      await user.click(screen.getByRole("button", { name: "Envoyer le lien" }));
+
+      expect(
+        await screen.findByText(
+          "Trop de tentatives. Réessayez dans quelques minutes.",
+        ),
+      ).toBeInTheDocument();
+      expect(screen.queryByText("Vérifiez votre boîte mail")).toBeNull();
+    });
+
+    it("drops the confirmation when going back to sign-in", async () => {
+      requestPasswordResetMock.mockResolvedValue({ data: {}, error: null });
+      const user = userEvent.setup();
+      render(<SignInScreen />);
+
+      await openForgotMode(user);
+      await user.type(screen.getByLabelText("Adresse email"), EMAIL);
+      await user.click(screen.getByRole("button", { name: "Envoyer le lien" }));
+      await screen.findByText("Vérifiez votre boîte mail");
+
+      await user.click(screen.getByRole("button", { name: "Se connecter" }));
+
+      expect(screen.queryByText("Vérifiez votre boîte mail")).toBeNull();
+      expect(screen.getByLabelText("Mot de passe")).toBeInTheDocument();
+    });
   });
 });

@@ -22,11 +22,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { DatePickerField } from "@/components/DatePickerField";
 import { FieldInfoButton } from "@/components/FieldInfoButton";
-import {
-  RequiredFieldLabel,
-  RequiredLegend,
-  RequiredMark,
-} from "@/components/RequiredMark";
+import { RequiredFieldLabel, RequiredMark } from "@/components/RequiredMark";
 import { todayIsoDate } from "@/lib/date";
 import { formatFrenchNumber } from "@/lib/format-number";
 import { focusFirstInvalidField } from "@/lib/form-focus";
@@ -259,8 +255,6 @@ export function HeightForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6" noValidate>
-      <RequiredLegend />
-
       <FieldSet>
         <FieldLegend>Informations</FieldLegend>
 
