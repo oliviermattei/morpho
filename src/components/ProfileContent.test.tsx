@@ -28,41 +28,45 @@ vi.mock("next/navigation", () => ({
 const DB_STUB = { __stub: "db" };
 
 describe("ProfileContent", () => {
-  it("reads with getDb(), getProfile(db, userId) and getLatestWeighIn(db, userId), then renders HeightForm and BmiCard", async () => {
+  it("reads with getDb() and getProfile(db, userId), then renders HeightForm and the account section", async () => {
     getDbMock.mockReturnValue(DB_STUB);
     getProfileMock.mockResolvedValue({
       userId: "user-1",
       heightCm: 175,
       targetWeightKg: 72,
     });
-    getLatestWeighInMock.mockResolvedValue({
-      weightKg: 72.4,
-      measuredOn: "2026-08-02",
-      sessionsWithWeightCount: 14,
-    });
     const { ProfileContent } = await import("./ProfileContent");
 
-    const element = await ProfileContent({ userId: "user-1" });
+    const element = await ProfileContent({
+      userId: "user-1",
+      email: "a@b.test",
+    });
     render(element);
 
     expect(getDbMock).toHaveBeenCalledTimes(1);
     expect(getProfileMock).toHaveBeenCalledWith(DB_STUB, "user-1");
-    expect(getLatestWeighInMock).toHaveBeenCalledWith(DB_STUB, "user-1");
+    // The IMC card is gone from /profil (it duplicated the home screen's
+    // tile), and with it the only reason this component read the latest
+    // weigh-in — so it is down to a single query.
+    expect(getLatestWeighInMock).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Taille (cm)")).toHaveValue("175");
-    expect(screen.getByText("23,6")).toBeInTheDocument();
+    expect(screen.queryByText("23,6")).toBeNull();
+    expect(screen.getByText("a@b.test")).toBeInTheDocument();
   });
 
-  it("passes null to HeightForm and BmiCard when the profile has no height yet", async () => {
+  it("passes null to HeightForm when the profile has no height yet", async () => {
     getDbMock.mockReturnValue(DB_STUB);
     getProfileMock.mockResolvedValue(null);
-    getLatestWeighInMock.mockResolvedValue(null);
     const { ProfileContent } = await import("./ProfileContent");
 
-    const element = await ProfileContent({ userId: "user-1" });
+    const element = await ProfileContent({
+      userId: "user-1",
+      email: "a@b.test",
+    });
     render(element);
 
     expect(screen.getByLabelText("Taille (cm)")).toHaveValue("");
-    expect(screen.getByText("Pas encore d'IMC")).toBeInTheDocument();
+    expect(screen.queryByText("Pas encore d'IMC")).toBeNull();
   });
 
   // s08 task 6: the target field is read from the same profile row —
@@ -74,10 +78,12 @@ describe("ProfileContent", () => {
       heightCm: null,
       targetWeightKg: 72.5,
     });
-    getLatestWeighInMock.mockResolvedValue(null);
     const { ProfileContent } = await import("./ProfileContent");
 
-    const element = await ProfileContent({ userId: "user-1" });
+    const element = await ProfileContent({
+      userId: "user-1",
+      email: "a@b.test",
+    });
     render(element);
 
     expect(screen.getByLabelText("Poids cible (kg)")).toHaveValue("72,5");
@@ -86,10 +92,12 @@ describe("ProfileContent", () => {
   it("renders an empty target field when the profile has no target yet", async () => {
     getDbMock.mockReturnValue(DB_STUB);
     getProfileMock.mockResolvedValue(null);
-    getLatestWeighInMock.mockResolvedValue(null);
     const { ProfileContent } = await import("./ProfileContent");
 
-    const element = await ProfileContent({ userId: "user-1" });
+    const element = await ProfileContent({
+      userId: "user-1",
+      email: "a@b.test",
+    });
     render(element);
 
     expect(screen.getByLabelText("Poids cible (kg)")).toHaveValue("");

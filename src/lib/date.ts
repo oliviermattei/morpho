@@ -5,10 +5,53 @@
  * otherwise date itself the day before (plan decision 9, research trap 3).
  */
 export function todayIsoDate(referenceDate: Date = new Date()): string {
-  const year = referenceDate.getFullYear();
-  const month = String(referenceDate.getMonth() + 1).padStart(2, "0");
-  const day = String(referenceDate.getDate()).padStart(2, "0");
+  return isoDateFromDate(referenceDate);
+}
+
+/**
+ * A `Date` back to the "YYYY-MM-DD" string every calendar day in this
+ * codebase travels as — read from the date's LOCAL fields, for exactly
+ * the reason todayIsoDate() documents above. This is the direction
+ * react-day-picker needs (it hands back a Date, the app stores a
+ * string), and todayIsoDate() is now the "today" special case of it
+ * rather than a second copy of the same three lines.
+ */
+export function isoDateFromDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * The other direction, for the same picker: "YYYY-MM-DD" to a LOCAL
+ * midnight Date. Local, not `new Date(iso)` — that parses as UTC
+ * midnight, which renders as the previous day everywhere west of
+ * Greenwich and would highlight the wrong cell in the calendar.
+ *
+ * Returns undefined for an empty or malformed string rather than an
+ * Invalid Date: the picker's `selected` prop takes undefined for "no
+ * selection", and an Invalid Date would make it throw instead.
+ */
+export function dateFromIsoDate(iso: string): Date | undefined {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+    return undefined;
+  }
+  const [year, month, day] = iso.split("-").map(Number);
+  const date = new Date(year, month - 1, day);
+  // Rejects "2026-02-31", which the constructor rolls forward to March.
+  return isoDateFromDate(date) === iso ? date : undefined;
+}
+
+/**
+ * The label shown on the date picker's trigger: "4 août 2026", no
+ * weekday. Anchored at noon UTC and delegated to formatFullDate, the
+ * same helper the chart tooltip already uses — one definition of "long
+ * French date", not a second Intl.DateTimeFormat.
+ */
+export function formatIsoDateLong(iso: string): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  return formatFullDate(Date.UTC(year, month - 1, day, 12, 0, 0));
 }
 
 /**

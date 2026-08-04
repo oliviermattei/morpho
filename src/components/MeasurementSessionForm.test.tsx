@@ -8,6 +8,18 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
 }));
 
+// Several tests below install fake timers and restore them on their LAST
+// line. That works until one of them fails: the assertion throws, the
+// restore never runs, and every later test in the file inherits frozen
+// timers — userEvent then waits forever on a setTimeout that will never
+// fire, so a single real failure surfaced as five unrelated 5-second
+// timeouts (observed, while the date field was being migrated to the
+// shadcn picker). This afterEach makes the restore unconditional; the
+// per-test calls stay, harmlessly, since useRealTimers is idempotent.
+afterEach(() => {
+  vi.useRealTimers();
+});
+
 const { toastSuccessMock, toastErrorMock } = vi.hoisted(() => ({
   toastSuccessMock: vi.fn(),
   toastErrorMock: vi.fn(),
@@ -86,8 +98,10 @@ describe("MeasurementSessionForm — the 11 fields (criterion 1)", () => {
 
     render(<MeasurementSessionForm mode="create" suggestions={{}} />);
 
-    const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
-    expect(dateInput.value).toBe("2026-08-02");
+    // The native <input type="date"> is gone (its browser-drawn popup
+    // ignored the design system): the field is now the shadcn picker's
+    // trigger, which renders the same calendar day in long French.
+    expect(screen.getByLabelText("Date")).toHaveTextContent("2 août 2026");
 
     vi.useRealTimers();
   });
@@ -98,9 +112,12 @@ describe("MeasurementSessionForm — the 11 fields (criterion 1)", () => {
 
     render(<MeasurementSessionForm mode="create" suggestions={{}} />);
 
-    const dateInput = screen.getByLabelText("Date") as HTMLInputElement;
-    expect(dateInput.min).toBe("2000-01-01");
-    expect(dateInput.max).toBe("2026-08-03");
+    // Same window as before, read off the picker's own data-min/data-max
+    // rather than an <input>'s min/max — a Popover trigger has no such
+    // native attributes.
+    const dateField = screen.getByLabelText("Date");
+    expect(dateField).toHaveAttribute("data-min", "2000-01-01");
+    expect(dateField).toHaveAttribute("data-max", "2026-08-03");
 
     vi.useRealTimers();
   });
@@ -457,6 +474,9 @@ describe("MeasurementSessionForm — submission", () => {
     fetchMock.mockResolvedValue(jsonResponse(401, { error: "unauthorized" }));
     render(<MeasurementSessionForm mode="create" suggestions={{}} />);
 
+    // The form now refuses an empty submission itself, before any fetch
+    // — so reaching the server's 401 requires a submittable form.
+    await user.type(screen.getByLabelText("Poids (kg)"), "82,4");
     await user.click(
       screen.getByRole("button", { name: /Enregistrer la session/ }),
     );
@@ -503,6 +523,9 @@ describe("MeasurementSessionForm — submission", () => {
     );
     render(<MeasurementSessionForm mode="create" suggestions={{}} />);
 
+    // Same reason as the 401 test above: the client gate refuses an
+    // empty form, so the server's own date verdict needs a submittable one.
+    await user.type(screen.getByLabelText("Poids (kg)"), "82,4");
     await user.click(
       screen.getByRole("button", { name: /Enregistrer la session/ }),
     );
@@ -850,9 +873,9 @@ describe("MeasurementSessionForm — mode='edit' (s09 task 7)", () => {
       />,
     );
 
-    expect((screen.getByLabelText("Date") as HTMLInputElement).value).toBe(
-      "2026-08-01",
-    );
+    // The picker renders the recorded day as its trigger label, in long
+    // French — there is no <input> to read a raw ISO `value` off any more.
+    expect(screen.getByLabelText("Date")).toHaveTextContent("1 août 2026");
   });
 
   // (b) no data-prefilled anywhere, ever — at mount or after typing.
@@ -1005,7 +1028,9 @@ describe("MeasurementSessionForm — mode='edit' (s09 task 7)", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Enregistrer/ }));
+    // Edit mode names its own action: "Modifier la session", never
+    // "Enregistrer la session" — the session already exists.
+    await user.click(screen.getByRole("button", { name: /Modifier la session/ }));
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
@@ -1032,7 +1057,9 @@ describe("MeasurementSessionForm — mode='edit' (s09 task 7)", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: /Enregistrer/ }));
+    // Edit mode names its own action: "Modifier la session", never
+    // "Enregistrer la session" — the session already exists.
+    await user.click(screen.getByRole("button", { name: /Modifier la session/ }));
 
     await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/historique"));
     expect(toastSuccessMock).toHaveBeenCalledWith("Modifications enregistrées");

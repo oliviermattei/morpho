@@ -30,6 +30,17 @@ export type MeasurementSessionInputResult =
 // choice it would refuse anyway. Single source, never redeclared.
 export const MIN_MEASURED_ON = "2000-01-01";
 
+/**
+ * Criterion 4's refusal, in one place. Exported because the form now
+ * refuses the same thing client-side before spending a round trip on it
+ * (MeasurementSessionForm) — two spellings of the same rule would mean
+ * the user reads a different sentence depending on which layer caught
+ * them, for identical input. This module stays the authority: the client
+ * check is an optimisation, never a substitute.
+ */
+export const EMPTY_SESSION_MESSAGE =
+  "Renseignez au moins une mesure avant d'enregistrer.";
+
 export function maxAllowedMeasuredOn(now: Date): string {
   const tomorrowUtc = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1),
@@ -150,7 +161,7 @@ export function parseMeasurementSessionInput(
     issues.push({
       code: "custom",
       path: [],
-      message: "Renseignez au moins une mesure avant d'enregistrer.",
+      message: EMPTY_SESSION_MESSAGE,
       input: record,
     });
   }

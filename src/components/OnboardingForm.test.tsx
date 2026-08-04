@@ -11,6 +11,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { OnboardingForm } from "./OnboardingForm";
+import { selectIsoDate } from "@/lib/test-support/select-iso-date";
 
 const EMPTY_PROPS = {
   initialHeightCm: null,
@@ -34,8 +35,7 @@ describe("OnboardingForm", () => {
   async function fillAll(user: ReturnType<typeof userEvent.setup>) {
     await user.type(screen.getByLabelText("Taille"), "175");
     await user.click(screen.getByRole("radio", { name: "Homme" }));
-    const dateInput = screen.getByLabelText("Début de la transformation");
-    await user.type(dateInput, "2026-06-23");
+    await selectIsoDate(user, "Début de la transformation", "2026-06-23");
   }
 
   it("asks the three questions and nothing else", () => {
@@ -167,8 +167,10 @@ describe("OnboardingForm", () => {
       "aria-checked",
       "true",
     );
-    expect(screen.getByLabelText("Début de la transformation")).toHaveValue(
-      "2026-01-15",
-    );
+    // The native date input became the shadcn picker: the stored day is
+    // now the trigger's label, in long French, not an input `value`.
+    expect(
+      screen.getByLabelText("Début de la transformation"),
+    ).toHaveTextContent("15 janvier 2026");
   });
 });

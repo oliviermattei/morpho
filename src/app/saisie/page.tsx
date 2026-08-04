@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { requireOnboarded } from "@/lib/onboarding-gate";
+import { BottomNav } from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import { MeasurementSessionFormLoader } from "@/components/MeasurementSessionFormLoader";
 import { MeasurementSessionFormSkeleton } from "@/components/MeasurementSessionFormSkeleton";
 
@@ -18,19 +19,19 @@ export default async function SaisiePage() {
   const { userId } = await requireOnboarded();
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-6 py-6">
-      <Link
-        href="/"
-        className="inline-flex min-h-11 items-center text-sm text-muted-foreground"
-      >
-        ‹ Retour
-      </Link>
-      <h1 className="text-2xl font-semibold text-foreground">
-        Nouvelle session
-      </h1>
-      <Suspense fallback={<MeasurementSessionFormSkeleton />}>
-        <MeasurementSessionFormLoader userId={userId} />
-      </Suspense>
-    </main>
+    <>
+      <PageHeader title="Saisie" />
+      {/* pb-28 clears the fixed BottomNav — without it the submit button
+          sits permanently under the bar. */}
+      <main className="flex flex-1 flex-col gap-6 px-6 py-6 pb-28">
+        <h1 className="text-2xl font-semibold text-foreground">
+          Nouvelle session
+        </h1>
+        <Suspense fallback={<MeasurementSessionFormSkeleton />}>
+          <MeasurementSessionFormLoader userId={userId} />
+        </Suspense>
+      </main>
+      <BottomNav />
+    </>
   );
 }

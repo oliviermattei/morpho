@@ -199,7 +199,7 @@ describe("GraphesPage — data path", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders the back link and the title alongside the panel", async () => {
+  it("renders the shared header and the title alongside the panel", async () => {
     getAuthMock.mockReturnValue({ getSession: vi.fn().mockResolvedValue(AUTHENTICATED_SESSION) });
     getAllMeasurementSeriesMock.mockResolvedValue(EMPTY_SERIES);
     getProfileMock.mockResolvedValue(ONBOARDED_NO_TARGET);
@@ -209,7 +209,10 @@ describe("GraphesPage — data path", () => {
     render(element);
 
     expect(screen.getByRole("heading", { name: "Évolution" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "‹ Accueil" })).toHaveAttribute("href", "/");
+    // "‹ Accueil" is gone — BottomNav carries that destination on every
+    // screen. ("Graphes" itself is not asserted here: PageHeader and the
+    // nav bar both legitimately render it.)
+    expect(screen.queryByRole("link", { name: "‹ Accueil" })).toBeNull();
   });
 });
 

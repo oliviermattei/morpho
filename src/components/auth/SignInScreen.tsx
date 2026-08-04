@@ -5,16 +5,18 @@ import { useRouter } from "next/navigation";
 import { TriangleAlert } from "lucide-react";
 import { z } from "zod";
 import { authClient } from "@/lib/auth-client";
+import { MIN_PASSWORD_LENGTH, passwordSchema } from "@/lib/password";
+import { focusFirstInvalidField } from "@/lib/form-focus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
 } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { RequiredFieldLabel, RequiredLegend } from "@/components/RequiredMark";
 
 // ADR 019: email + password replaces the magic link as the only sign-in
 // path. Neon Auth's beta wraps Better Auth verbatim, and its credential
@@ -29,18 +31,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 // React state, not react-hook-form (not in the stack, radix-nova style).
 const emailSchema = z.email("Cette adresse email n'est pas valide.");
 
-// Better Auth's own floor for the credential provider (its
-// `emailAndPassword.minPasswordLength` default). Declared here so the
-// client refuses before the round-trip instead of surfacing the server's
-// English PASSWORD_TOO_SHORT — the server still enforces it either way.
-const MIN_PASSWORD_LENGTH = 8;
-
-const passwordSchema = z
-  .string()
-  .min(
-    MIN_PASSWORD_LENGTH,
-    `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.`,
-  );
+// MIN_PASSWORD_LENGTH / passwordSchema moved to src/lib/password.ts when
+// /profil gained its own "changer mon mot de passe" form — one rule, one
+// definition, imported by both screens.
 
 const NETWORK_FAILURE_MESSAGE = "Vérifiez votre connexion et réessayez.";
 
@@ -233,7 +226,15 @@ export function SignInScreen() {
             `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caractères.`),
     );
 
-    if (!parsedEmail.success || !parsedPassword.success) return;
+    if (!parsedEmail.success || !parsedPassword.success) {
+      // Both fields are above the fold on this screen, so the scroll is
+      // usually a no-op — the focus is the point: the refused field is
+      // where the caret lands, so correcting it takes no aiming.
+      focusFirstInvalidField(["email", "password"], (fieldId) =>
+        fieldId === "email" ? !parsedEmail.success : !parsedPassword.success,
+      );
+      return;
+    }
 
     void submit(parsedEmail.data, parsedPassword.data);
   }
@@ -256,11 +257,15 @@ export function SignInScreen() {
             <AlertDescription>{operationError}</AlertDescription>
           </Alert>
         )}
+        <RequiredLegend />
         <Field data-invalid={emailError ? true : undefined}>
-          <FieldLabel htmlFor="email">Adresse email</FieldLabel>
+          <RequiredFieldLabel htmlFor="email">
+            Adresse email
+          </RequiredFieldLabel>
           <Input
             id="email"
             name="email"
+            required
             type="email"
             inputMode="email"
             autoComplete="email"
@@ -281,10 +286,13 @@ export function SignInScreen() {
           <FieldError>{emailError}</FieldError>
         </Field>
         <Field data-invalid={passwordError ? true : undefined}>
-          <FieldLabel htmlFor="password">Mot de passe</FieldLabel>
+          <RequiredFieldLabel htmlFor="password">
+            Mot de passe
+          </RequiredFieldLabel>
           <Input
             id="password"
             name="password"
+            required
             type="password"
             autoComplete={
               mode === "sign-in" ? "current-password" : "new-password"

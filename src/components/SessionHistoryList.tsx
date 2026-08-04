@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Empty,
@@ -80,20 +81,31 @@ export function SessionHistoryList({
                   <ItemTitle>
                     {formatSessionDate(session.measuredOn, "UTC")}
                   </ItemTitle>
-                  <span className="text-sm text-muted-foreground">
-                    Modifier
-                  </span>
+                  {/* The word "Modifier" is gone, but the affordance it
+                      carried is not: the whole row still opens the edit
+                      screen, and a chevron says so without spending a
+                      line of text per session on saying it. */}
+                  <ChevronRight
+                    className="size-4 shrink-0 text-muted-foreground"
+                    aria-hidden="true"
+                  />
                 </div>
-                <dl className="flex flex-col gap-1">
+                {/* Two columns: a full session is 10 measurements, which
+                    as a single stacked list made one card taller than the
+                    viewport and pushed the next session entirely out of
+                    sight. */}
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
                   {session.measurements.map((measurement) => {
                     const entry = MEASUREMENT_CATALOG_BY_KIND[measurement.kind];
                     return (
                       <div
                         key={measurement.kind}
-                        className="flex items-center justify-between gap-4 text-sm"
+                        className="flex items-baseline justify-between gap-2 text-sm"
                       >
-                        <dt className="text-muted-foreground">{entry.label}</dt>
-                        <dd className="font-mono tabular-nums">
+                        <dt className="truncate text-muted-foreground">
+                          {entry.label}
+                        </dt>
+                        <dd className="shrink-0 font-mono tabular-nums">
                           {formatMeasurementValue(measurement.value, entry.unit)}
                         </dd>
                       </div>

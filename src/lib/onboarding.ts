@@ -53,7 +53,12 @@ export const START_DATE_TOO_OLD_ERROR = "Indiquez une date après 2000.";
 // ("0225") into a field error instead of a "J+657000" on the home
 // screen. Above it, no opinion — someone may legitimately be counting
 // from years back.
-const EARLIEST_START_DATE = "2000-01-01";
+//
+// Exported since the date picker replaced <input type="date">: the
+// calendar needs the same floor as a `min`, or its year dropdown offers
+// a century of years the server would refuse — and renders every one of
+// them on every mount.
+export const EARLIEST_START_DATE = "2000-01-01";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

@@ -20,12 +20,31 @@ function emptySeriesByKind(
 
 const NO_BMI: BmiSeriesResult = { status: "heightMissing" };
 
+/**
+ * The panel no longer has a selector: every measure is on screen at
+ * once — four in the "Poids et indices" carousel, seven stacked under
+ * "Mensurations". So an assertion about ONE measure has to be scoped to
+ * its own card, or it would match another card's copy of the same text
+ * ("Dernière valeur" now appears eleven times).
+ *
+ * Each card is identified by its own <h3>, which carries the measure's
+ * label straight from MEASUREMENT_CATALOG.
+ */
+function cardFor(label: string): HTMLElement {
+  const heading = screen.getByRole("heading", { name: label, level: 3 });
+  const card = heading.closest('[data-slot="card"]');
+  if (card === null) {
+    throw new Error(`cardFor: no card wraps the "${label}" heading`);
+  }
+  return card as HTMLElement;
+}
+
 // Plan task 6, one of the two named acceptance-critical checks: the
 // selector must never repeat a hardcoded copy of the catalog. Overriding
 // one label at the module level and observing the rendered trigger
 // change is the only proof that isn't circumstantial.
 describe("MeasurementChartsPanel — labels are read from measurements.ts, never recopied", () => {
-  it("a label changed in MEASUREMENT_CATALOG changes what the selector shows", async () => {
+  it("a label changed in MEASUREMENT_CATALOG changes what the panel shows", async () => {
     vi.resetModules();
     vi.doMock("@/lib/measurements", async (importOriginal) => {
       const actual =
@@ -52,8 +71,15 @@ describe("MeasurementChartsPanel — labels are read from measurements.ts, never
       />,
     );
 
-    expect(screen.getByText("Poids-test")).toBeInTheDocument();
-    expect(screen.queryByText("Poids")).toBeNull();
+    // Scoped to the card heading: the label legitimately appears more
+    // than once now (the card title, and the live region announcing the
+    // current carousel slide), so a bare getByText would be ambiguous.
+    expect(
+      screen.getByRole("heading", { name: "Poids-test", level: 3 }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "Poids", level: 3 }),
+    ).toBeNull();
 
     vi.doUnmock("@/lib/measurements");
     vi.resetModules();
@@ -61,7 +87,7 @@ describe("MeasurementChartsPanel — labels are read from measurements.ts, never
 });
 
 describe("MeasurementChartsPanel — empty states", () => {
-  it("no session at all: title, description, action, and the selector is disabled", () => {
+  it("no session at all: one invitation, and not a single measure card", () => {
     render(
       <MeasurementChartsPanel seriesByKind={emptySeriesByKind()} bmi={NO_BMI} targetWeightKg={null} />,
     );
@@ -70,10 +96,12 @@ describe("MeasurementChartsPanel — empty states", () => {
     expect(
       screen.getByRole("link", { name: "Saisir ma première session" }),
     ).toHaveAttribute("href", "/saisie");
-    expect(screen.getByRole("combobox")).toBeDisabled();
+    // "No session at all" is one fact about the account: it is stated
+    // once, instead of eleven cards each repeating their own empty state.
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
   });
 
-  it("a measure never recorded, with other sessions existing: title, description, action, and the selector STAYS active", () => {
+  it("a measure never recorded, with other sessions existing: that card alone shows its empty state", () => {
     render(
       <MeasurementChartsPanel
         seriesByKind={emptySeriesByKind({
@@ -84,16 +112,21 @@ describe("MeasurementChartsPanel — empty states", () => {
       />,
     );
 
-    // Default selection is weight_kg, which has no data here.
-    expect(screen.getByText("Aucune mesure de poids")).toBeInTheDocument();
+    // The weight has no data here; the chest does, and both cards are on
+    // screen at the same time — so the empty state is asserted inside the
+    // weight's own card, not globally.
+    const weightCard = cardFor("Poids");
     expect(
-      screen.getByRole("link", { name: "Saisir une session" }),
+      within(weightCard).getByText("Aucune mesure de poids"),
+    ).toBeInTheDocument();
+    expect(
+      within(weightCard).getByRole("link", { name: "Saisir une session" }),
     ).toHaveAttribute("href", "/saisie");
-    expect(screen.getByRole("combobox")).not.toBeDisabled();
+    // The chest card is unaffected and shows its value.
+    expect(within(cardFor("Poitrine")).getByText("100 cm")).toBeInTheDocument();
   });
 
-  it("IMC without a reference height: the distinct title, description and action — never the generic 'no data' message", async () => {
-    const user = userEvent.setup();
+  it("IMC without a reference height: the distinct title, description and action — never the generic 'no data' message", () => {
     render(
       <MeasurementChartsPanel
         seriesByKind={emptySeriesByKind({
@@ -104,14 +137,15 @@ describe("MeasurementChartsPanel — empty states", () => {
       />,
     );
 
-    await user.click(screen.getByRole("combobox"));
-    await user.click(await screen.findByRole("option", { name: "IMC" }));
-
-    expect(screen.getByText("Taille non renseignée")).toBeInTheDocument();
+    // No selection step any more — the IMC card is simply on screen.
+    const bmiCard = cardFor("IMC");
     expect(
-      screen.getByRole("link", { name: "Renseigner ma taille" }),
+      within(bmiCard).getByText("Taille non renseignée"),
+    ).toBeInTheDocument();
+    expect(
+      within(bmiCard).getByRole("link", { name: "Renseigner ma taille" }),
     ).toHaveAttribute("href", "/profil");
-    expect(screen.queryByText(/Aucune mesure/)).toBeNull();
+    expect(within(bmiCard).queryByText(/Aucune mesure/)).toBeNull();
   });
 });
 
@@ -176,10 +210,9 @@ describe("MeasurementChartsPanel — legend counts", () => {
   });
 });
 
-describe("MeasurementChartsPanel — switching measure never triggers a network call", () => {
-  it("changing the selected measure swaps the series without calling fetch", async () => {
+describe("MeasurementChartsPanel — reading another measure never triggers a network call", () => {
+  it("renders every measure's series from the props alone, without calling fetch", () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
-    const user = userEvent.setup();
     render(
       <MeasurementChartsPanel
         seriesByKind={emptySeriesByKind({
@@ -197,13 +230,11 @@ describe("MeasurementChartsPanel — switching measure never triggers a network 
       />,
     );
 
-    expect(screen.getByText("75 kg")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("combobox"));
-    await user.click(await screen.findByRole("option", { name: "Poitrine" }));
-
-    expect(screen.queryByText("75 kg")).toBeNull();
-    expect(screen.getByText("101 cm")).toBeInTheDocument();
+    // R7 unchanged, and now stronger: both series are rendered from the
+    // single page-load query, at the same time. There is no selection
+    // left that could have fetched anything.
+    expect(within(cardFor("Poids")).getByText("75 kg")).toBeInTheDocument();
+    expect(within(cardFor("Poitrine")).getByText("101 cm")).toBeInTheDocument();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
@@ -230,9 +261,8 @@ describe("MeasurementChartsPanel — the header block ('Dernière valeur')", () 
   });
 });
 
-describe("MeasurementChartsPanel — the select's two groups", () => {
-  it("shows all 11 options, split into 'Poids et indices' and 'Mensurations'", async () => {
-    const user = userEvent.setup();
+describe("MeasurementChartsPanel — the two sections", () => {
+  it("shows all 11 measures, split into 'Poids et indices' and 'Mensurations'", () => {
     render(
       <MeasurementChartsPanel
         seriesByKind={emptySeriesByKind({
@@ -243,13 +273,38 @@ describe("MeasurementChartsPanel — the select's two groups", () => {
       />,
     );
 
-    await user.click(screen.getByRole("combobox"));
+    // The same 11 measures the selector used to list, now all rendered:
+    // 4 in the carousel, 7 stacked below it.
+    expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(11);
 
-    const listbox = await screen.findByRole("listbox");
-    expect(within(listbox).getAllByRole("option")).toHaveLength(11);
-    expect(within(listbox).getByText("Poids et indices")).toBeInTheDocument();
-    expect(within(listbox).getByText("Mensurations")).toBeInTheDocument();
-    expect(within(listbox).getByRole("option", { name: "IMC" })).toBeInTheDocument();
+    const carousel = screen.getByRole("region", { name: "Poids et indices" });
+    expect(within(carousel).getAllByRole("heading", { level: 3 })).toHaveLength(4);
+    expect(within(carousel).getByRole("heading", { name: "IMC" })).toBeInTheDocument();
+
+    const mensurations = screen.getByRole("region", { name: "Mensurations" });
+    expect(
+      within(mensurations).getAllByRole("heading", { level: 3 }),
+    ).toHaveLength(7);
+  });
+
+  it("opens on the weight — the measure the page is primarily about", () => {
+    render(
+      <MeasurementChartsPanel
+        seriesByKind={emptySeriesByKind({
+          weight_kg: [{ t: Date.UTC(2026, 0, 1), value: 74 }],
+        })}
+        bmi={{ status: "ok", series: [] }}
+        targetWeightKg={null}
+      />,
+    );
+
+    const carousel = screen.getByRole("region", { name: "Poids et indices" });
+    const [first] = within(carousel).getAllByRole("heading", { level: 3 });
+    expect(first).toHaveTextContent("Poids");
+    // And the position indicator agrees it is the current slide.
+    expect(
+      within(carousel).getByRole("button", { name: "Poids" }),
+    ).toHaveAttribute("aria-current", "true");
   });
 });
 
@@ -308,9 +363,8 @@ describe("MeasurementChartsPanel — target weight row and reference line (s08 t
 // s08 task 8, the negative cases — "trap 9: it's the negative test that
 // counts, not the one confirming presence on weight".
 describe("MeasurementChartsPanel — target weight, the negative cases (s08 task 8)", () => {
-  it("(a) a target is set, but another measure is selected: no row, no reference line", async () => {
-    const user = userEvent.setup();
-    const { container } = render(
+  it("(a) a target is set, but on another measure's card: no row, no reference line", () => {
+    render(
       <MeasurementChartsPanel
         seriesByKind={emptySeriesByKind({
           weight_kg: [{ t: Date.UTC(2026, 2, 30), value: 74.1 }],
@@ -321,20 +375,17 @@ describe("MeasurementChartsPanel — target weight, the negative cases (s08 task
       />,
     );
 
-    await user.click(screen.getByRole("combobox"));
-    await user.click(await screen.findByRole("option", { name: "Poitrine" }));
-
-    expect(screen.queryByText(/Cible/)).toBeNull();
-    expect(screen.queryByText(/écart/)).toBeNull();
-    expect(container.querySelector(".recharts-reference-line")).toBeNull();
+    const chestCard = cardFor("Poitrine");
+    expect(within(chestCard).queryByText(/Cible/)).toBeNull();
+    expect(within(chestCard).queryByText(/écart/)).toBeNull();
+    expect(chestCard.querySelector(".recharts-reference-line")).toBeNull();
   });
 
   // Criterion 5 by name: the target induces a BMI mechanically (a
   // lower weight lowers the BMI too), which makes this the exact
   // "logical" addition an agent could make spontaneously — forbidden.
-  it("(a) a target is set, but IMC is selected: no row, no reference line, even though it derives from weight", async () => {
-    const user = userEvent.setup();
-    const { container } = render(
+  it("(a) a target is set, but on the IMC card: no row, no reference line, even though it derives from weight", () => {
+    render(
       <MeasurementChartsPanel
         seriesByKind={emptySeriesByKind({
           weight_kg: [{ t: Date.UTC(2026, 2, 30), value: 74.1 }],
@@ -344,12 +395,10 @@ describe("MeasurementChartsPanel — target weight, the negative cases (s08 task
       />,
     );
 
-    await user.click(screen.getByRole("combobox"));
-    await user.click(await screen.findByRole("option", { name: "IMC" }));
-
-    expect(screen.queryByText(/Cible/)).toBeNull();
-    expect(screen.queryByText(/écart/)).toBeNull();
-    expect(container.querySelector(".recharts-reference-line")).toBeNull();
+    const bmiCard = cardFor("IMC");
+    expect(within(bmiCard).queryByText(/Cible/)).toBeNull();
+    expect(within(bmiCard).queryByText(/écart/)).toBeNull();
+    expect(bmiCard.querySelector(".recharts-reference-line")).toBeNull();
   });
 
   it("(b) no target at all: the rendered card is byte-for-byte s07's — no row, no reference line", () => {

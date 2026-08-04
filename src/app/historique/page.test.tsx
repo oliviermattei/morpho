@@ -12,6 +12,20 @@ const { getProfileMock } = vi.hoisted(() => ({ getProfileMock: vi.fn() }));
 vi.mock("@/lib/db", () => ({ getDb: () => ({}) }));
 vi.mock("@/lib/profile", () => ({ getProfile: getProfileMock }));
 
+// The page now mounts PageHeader, which renders OfflineBanner —
+// useRouter() needs a router context this jsdom render otherwise has
+// none of. Same mock as src/app/(home)/page.test.tsx already uses;
+// redirect() must stay the REAL Next implementation, since the gate's
+// own redirects are what several tests below assert on.
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+  return {
+    ...actual,
+    useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
+    usePathname: () => "/historique",
+  };
+});
+
 const ONBOARDED = {
   userId: "user-1",
   heightCm: 175,
@@ -60,7 +74,7 @@ describe("HistoriquePage", () => {
     expect(digest).toMatch(/^NEXT_REDIRECT;.*\/auth\/sign-in/);
   });
 
-  it("renders the h1, the back link and the Nouvelle session button — without waiting on the database", async () => {
+  it("renders the h1, the shared header and the Nouvelle session button — without waiting on the database", async () => {
     getAuthMock.mockReturnValue({
       getSession: vi.fn().mockResolvedValue({
         data: {
@@ -79,9 +93,7 @@ describe("HistoriquePage", () => {
       screen.getByRole("heading", { name: "Historique" }),
     ).toBeInTheDocument();
 
-    const backLink = screen.getByRole("link", { name: "‹ Retour" });
-    expect(backLink).toHaveAttribute("href", "/");
-    expect(backLink.className).toMatch(/min-h-11/);
+    expect(screen.queryByRole("link", { name: "‹ Retour" })).toBeNull();
 
     const newSessionLink = screen.getByRole("link", {
       name: "Nouvelle session",

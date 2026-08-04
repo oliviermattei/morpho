@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { getDb } from "@/lib/db";
 import { getSessionForUser } from "@/lib/db/sessions";
 import { sessionIdSchema } from "@/lib/measurements";
 import { routes } from "@/lib/routes";
-import { formatSessionDate } from "@/lib/date";
+import { BottomNav } from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import { MeasurementSessionForm } from "@/components/MeasurementSessionForm";
 import { DeleteSessionDialog } from "@/components/DeleteSessionDialog";
 import { FieldSeparator } from "@/components/ui/field";
@@ -58,22 +58,16 @@ export default async function SessionEditPage({
   const measurementCount = Object.keys(session.measurements).length;
 
   return (
-    <main className="flex flex-1 flex-col gap-6 px-6 py-6">
-      <Link
-        href={routes.history}
-        className="inline-flex min-h-11 items-center text-sm text-muted-foreground"
-      >
-        ‹ Historique
-      </Link>
-
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold text-foreground">
-          Modifier la session
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {formatSessionDate(session.measuredOn, "UTC")}
-        </p>
-      </div>
+    <>
+    <PageHeader title="Historique" />
+    <main className="flex flex-1 flex-col gap-6 px-6 py-6 pb-28">
+      {/* No date line under the title any more: the form's own date
+          field shows it, in a control that can also change it. Two
+          renderings of the same fact, one of them read-only, invited
+          the reading that the title's date was the immutable one. */}
+      <h1 className="text-2xl font-semibold text-foreground">
+        Modifier la session
+      </h1>
 
       <MeasurementSessionForm
         mode="edit"
@@ -98,5 +92,7 @@ export default async function SessionEditPage({
         />
       </div>
     </main>
+    <BottomNav />
+    </>
   );
 }

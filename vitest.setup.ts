@@ -39,6 +39,120 @@ if (typeof Element !== "undefined") {
     Element.prototype.releasePointerCapture ?? (() => {});
 }
 
+// jsdom implements no `window.matchMedia` at all (it is on jsdom's own
+// "not implemented" list). Embla — the engine behind ui/carousel.tsx,
+// which /graphes now mounts — calls it unconditionally while activating,
+// so without this every test that renders the charts panel dies with
+// "undefined is not a function" inside OptionsHandler, before a single
+// assertion runs.
+//
+// The stub reports "does not match" for every query, which is the right
+// answer here: Embla only consults it for the responsive `breakpoints`
+// option, and this project passes none — so the base options are the
+// ones that should apply. Same `??` guard and the same reasoning as the
+// Element no-ops above, including the `typeof` check for the node-
+// environment test files that have no `window`.
+if (typeof window !== "undefined") {
+  window.matchMedia =
+    window.matchMedia ??
+    ((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    }));
+}
+
+// Same gap, same component, one layer further in: Embla constructs an
+// IntersectionObserver while initialising (SlidesInView), and jsdom
+// implements none. The stub observes nothing and reports nothing, which
+// leaves every slide "not in view" — harmless for these tests, which
+// assert on the rendered cards, not on Embla's own visibility bookkeeping.
+//
+// Deliberately NOT the ResizeObserver polyfill s07's plan refuses for
+// ChartContainer (P5): that one would have faked a LAYOUT the assertions
+// then depended on. This only makes the component mount at all.
+if (typeof globalThis.IntersectionObserver === "undefined") {
+  class IntersectionObserverStub implements IntersectionObserver {
+    readonly root = null;
+    readonly rootMargin = "";
+    readonly thresholds: readonly number[] = [];
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+    takeRecords(): IntersectionObserverEntry[] {
+      return [];
+    }
+  }
+  globalThis.IntersectionObserver = IntersectionObserverStub;
+}
+
+// And the third observer Embla constructs on init (ResizeHandler).
+//
+// s07's P5 and its research note refuse a ResizeObserver polyfill "sans
+// nécessité démontrée". The necessity is now demonstrated: Embla throws
+// on mount without one, so /graphes cannot be rendered in a test at all.
+//
+// This stub REPORTS A SIZE, and that detail is the whole difference
+// between a working polyfill and the one P5 was right to refuse. Recharts'
+// ResponsiveContainer skips its observer entirely when ResizeObserver is
+// undefined, and keeps ChartContainer's `initialDimension` — which is why
+// charts were testable here before. The moment the global exists it takes
+// the observer path instead, and a stub that stayed silent would leave it
+// waiting on a measurement that never comes: every chart renders an empty
+// div and every SVG assertion in this repo fails (reproduced — 14 tests).
+//
+// So it emits exactly ChartContainer's own INITIAL_DIMENSION, 320 × 200
+// (chart.tsx:12). The charts therefore measure precisely what they
+// already assumed, and no existing geometry assertion moves. jsdom still
+// computes no real layout: this is a fixed, declared size, not a fake
+// one derived from a fake layout.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  const CHART_CONTAINER_INITIAL_DIMENSION = { width: 320, height: 200 };
+
+  class ResizeObserverStub implements ResizeObserver {
+    constructor(private readonly callback: ResizeObserverCallback) {}
+
+    observe(target: Element) {
+      const { width, height } = CHART_CONTAINER_INITIAL_DIMENSION;
+      const contentRect = {
+        width,
+        height,
+        top: 0,
+        left: 0,
+        right: width,
+        bottom: height,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      } as DOMRectReadOnly;
+      const box: ResizeObserverSize[] = [
+        { inlineSize: width, blockSize: height },
+      ];
+      this.callback(
+        [
+          {
+            target,
+            contentRect,
+            borderBoxSize: box,
+            contentBoxSize: box,
+            devicePixelContentBoxSize: box,
+          },
+        ],
+        this,
+      );
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+
+  globalThis.ResizeObserver = ResizeObserverStub;
+}
+
 // @neondatabase/auth/next/server imports `next/headers` at module scope.
 // `next`'s package.json has no "exports" map, so Vite externalizes this
 // node_modules-to-node_modules import straight to Node's strict ESM

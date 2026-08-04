@@ -24,11 +24,18 @@ export function HomeHeader({
         <span className="text-xl font-bold tracking-tight text-foreground">
           morpho
         </span>
-        <p className="text-xs text-muted-foreground">
-          <span className="font-bold text-foreground">
-            {formatDayCounter(days)}
-          </span>{" "}
-          · {PHASE_LABELS[phase]}
+        {/* "J+42 depuis le début" — the counter alone never said what it
+            counted from, and "J+42 · Stabilisation" read as though the
+            two halves were one measurement. The phase moves to its own
+            line so neither has to be abbreviated on a narrow phone. */}
+        <p className="flex flex-col items-end text-xs leading-tight text-muted-foreground">
+          <span>
+            <span className="font-bold text-foreground">
+              {formatDayCounter(days)}
+            </span>{" "}
+            depuis le début
+          </span>
+          <span>{PHASE_LABELS[phase]}</span>
         </p>
       </header>
       <OfflineBanner />

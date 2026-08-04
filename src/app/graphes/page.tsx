@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { NEON_AUTH_NETWORK_ERROR_CODES } from "@neondatabase/auth/next/server";
 import { getAuth } from "@/lib/auth";
@@ -10,6 +9,7 @@ import { routes } from "@/lib/routes";
 import { MeasurementChartsPanel } from "@/components/MeasurementChartsPanel";
 import { RetryButton } from "@/components/RetryButton";
 import { BottomNav } from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import {
   Empty,
   EmptyContent,
@@ -66,18 +66,8 @@ function ReadErrorState() {
 function GraphesShell({ children }: { children: React.ReactNode }) {
   return (
     <>
+    <PageHeader title="Graphes" />
     <main className="flex flex-1 flex-col gap-6 px-4 py-6 pb-28">
-      {/* "/" is the home screen (src/app/(home)/page.tsx) — not one of
-          routes.ts's named entries, same as that page's own retry link
-          (src/app/(home)/page.tsx: `<a href="/">`). routes.ts's scan
-          only guards its four named routes, not this one, by the same
-          existing convention. */}
-      <Link
-        href="/"
-        className="inline-flex min-h-11 items-center text-sm text-muted-foreground"
-      >
-        ‹ Accueil
-      </Link>
       <h1 className="text-lg font-semibold text-foreground">Évolution</h1>
       {children}
     </main>

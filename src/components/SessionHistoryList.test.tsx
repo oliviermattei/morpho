@@ -198,11 +198,14 @@ describe("SessionHistoryList — openable rows (s09 task 9)", () => {
     expect(link).toHaveAttribute("href", "/historique/session-1");
   });
 
-  it('shows "Modifier" as plain text next to the title, never inside a second interactive element', () => {
+  it("carries no nested interactive element — the whole row is the single link", () => {
     render(<SessionHistoryList sessions={sessions} heightCm={null} />);
 
     const item = document.querySelector('[data-slot="item"]') as HTMLElement;
-    expect(within(item).getByText("Modifier")).toBeInTheDocument();
+    // The word "Modifier" is gone; a chevron carries the affordance now,
+    // and it is decorative (aria-hidden), so the row's accessible name
+    // stays the session's date alone.
+    expect(within(item).queryByText("Modifier")).toBeNull();
     // asChild merges the Link's own <a> into the Item's root node — the
     // whole row IS the single link, never a second one nested inside it.
     expect(item.tagName).toBe("A");

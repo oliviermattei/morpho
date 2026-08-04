@@ -87,7 +87,7 @@ describe("HeightForm — the field (criterion 1, plan P4)", () => {
   });
 
   it('is type="text" with inputMode="decimal", never type="number" (P4)', () => {
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     const input = screen.getByLabelText("Taille (cm)");
     expect(input).toHaveAttribute("type", "text");
@@ -128,6 +128,17 @@ describe("HeightForm — the field (criterion 1, plan P4)", () => {
   });
 });
 
+// ADR 020 made sex and start date mandatory, and the form now enforces
+// that client-side (the user asked for required fields to be marked and
+// the submit blocked). /profil always mounts this form on a profile that
+// has already been through the onboarding, so both are always populated
+// — these tests say so explicitly rather than exercising a state the app
+// no longer produces.
+const ONBOARDED_PROPS = {
+  initialSex: "male" as const,
+  initialStartedOn: "2026-01-01",
+};
+
 describe("HeightForm — submission", () => {
   let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -145,7 +156,7 @@ describe("HeightForm — submission", () => {
   it("submits the raw string the user typed, PUT to /api/profile", async () => {
     const user = userEvent.setup();
     fetchMock.mockResolvedValue(jsonResponse(200, { heightCm: 175.5 }));
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     await user.type(screen.getByLabelText("Taille (cm)"), "175,5");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
@@ -161,7 +172,7 @@ describe("HeightForm — submission", () => {
   it("shows a success toast and refreshes the router on 200", async () => {
     const user = userEvent.setup();
     fetchMock.mockResolvedValue(jsonResponse(200, { heightCm: 175 }));
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     await user.type(screen.getByLabelText("Taille (cm)"), "175");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
@@ -170,16 +181,22 @@ describe("HeightForm — submission", () => {
     expect(toastSuccessMock).toHaveBeenCalledWith("Taille enregistrée.");
   });
 
-  it('shows the "Taille retirée." toast when the field is cleared and saved (R7)', async () => {
+  // Replaces s08's "Taille retirée." case. The height is mandatory —
+  // clearing it used to be accepted, and the user was then bounced back
+  // through the onboarding on the next navigation. It is now refused
+  // where the mistake is made, with the field marked and scrolled to,
+  // and no request is sent at all.
+  it("refuses to submit a cleared height, marks the field, and sends nothing", async () => {
     const user = userEvent.setup();
-    fetchMock.mockResolvedValue(jsonResponse(200, { heightCm: null }));
-    render(<HeightForm initialHeightCm={175} />);
+    render(<HeightForm initialHeightCm={175} {...ONBOARDED_PROPS} />);
 
-    await user.clear(screen.getByLabelText("Taille (cm)"));
+    const input = screen.getByLabelText("Taille (cm)");
+    await user.clear(input);
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
 
-    await waitFor(() => expect(refreshMock).toHaveBeenCalledTimes(1));
-    expect(toastSuccessMock).toHaveBeenCalledWith("Taille retirée.");
+    expect(await screen.findByText("Indiquez votre taille.")).toBeInTheDocument();
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("shows a field error under the field on 400, and keeps the value the user typed", async () => {
@@ -189,7 +206,7 @@ describe("HeightForm — submission", () => {
         fieldErrors: { heightCm: ["Indiquez une taille entre 80 et 260 cm."] },
       }),
     );
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     const input = screen.getByLabelText("Taille (cm)");
     await user.type(input, "300");
@@ -212,7 +229,7 @@ describe("HeightForm — submission", () => {
   it("tells the user their session expired on 401, instead of a generic operation failure, and offers a way to sign in again", async () => {
     const user = userEvent.setup();
     fetchMock.mockResolvedValue(jsonResponse(401, { error: "unauthorized" }));
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     await user.type(screen.getByLabelText("Taille (cm)"), "175");
     await user.click(screen.getByRole("button", { name: "Enregistrer" }));
@@ -230,7 +247,7 @@ describe("HeightForm — submission", () => {
   it("shows the operation-error message on a 503, and the button becomes actionable again", async () => {
     const user = userEvent.setup();
     fetchMock.mockResolvedValue(jsonResponse(503, { error: "auth_unavailable" }));
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     await user.type(screen.getByLabelText("Taille (cm)"), "175");
     const button = screen.getByRole("button", { name: "Enregistrer" });
@@ -252,7 +269,7 @@ describe("HeightForm — submission", () => {
         resolveFetch = resolve;
       }),
     );
-    render(<HeightForm initialHeightCm={null} />);
+    render(<HeightForm initialHeightCm={null} {...ONBOARDED_PROPS} />);
 
     const input = screen.getByLabelText("Taille (cm)");
     await user.type(input, "175");

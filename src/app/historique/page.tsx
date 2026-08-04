@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { requireOnboarded } from "@/lib/onboarding-gate";
 import { BottomNav } from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { SessionHistory } from "@/components/SessionHistory";
 import { SessionHistorySkeleton } from "@/components/SessionHistorySkeleton";
@@ -23,13 +24,8 @@ export default async function HistoriquePage() {
 
   return (
     <>
+    <PageHeader title="Historique" />
     <main className="flex flex-1 flex-col gap-6 px-6 py-6 pb-28">
-      <Link
-        href="/"
-        className="inline-flex min-h-11 items-center text-sm text-muted-foreground"
-      >
-        ‹ Retour
-      </Link>
       <div className="flex flex-col gap-4">
         <h1 className="text-2xl font-semibold text-foreground">Historique</h1>
         <Button asChild className="h-11 w-full">

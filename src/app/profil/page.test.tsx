@@ -93,7 +93,12 @@ describe("ProfilPage", () => {
     const element = await ProfilPage();
     render(element);
 
-    expect(profileContentMock.mock.calls[0]?.[0]).toEqual({ userId: "user-1" });
+    // The email joins the userId — both from the verified session, never
+    // from anything on the request. toEqual still fails on any extra prop.
+    expect(profileContentMock.mock.calls[0]?.[0]).toEqual({
+      userId: "user-1",
+      email: "a@b.test",
+    });
   });
 
   it("exports dynamic = 'force-dynamic'", async () => {

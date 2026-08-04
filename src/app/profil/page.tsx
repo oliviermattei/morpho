@@ -4,6 +4,7 @@ import { getAuth } from "@/lib/auth";
 import { ProfileContent } from "@/components/ProfileContent";
 import { ProfileSkeleton } from "@/components/ProfileSkeleton";
 import { BottomNav } from "@/components/BottomNav";
+import { PageHeader } from "@/components/PageHeader";
 import { LogoutButton } from "@/components/auth/LogoutButton";
 import { resolveRevision } from "@/lib/pwa/build-id";
 
@@ -33,6 +34,7 @@ export default async function ProfilPage() {
 
   return (
     <>
+    <PageHeader title="Profil" />
     <main className="flex flex-1 flex-col gap-6 px-6 py-6 pb-28">
       {/* No back arrow any more: BottomNav is mounted on every screen
           (ADR 020), so "go back to the home screen" is already one
@@ -40,7 +42,10 @@ export default async function ProfilPage() {
           compete with the bar. */}
       <h1 className="text-2xl font-semibold text-foreground">Profil</h1>
       <Suspense fallback={<ProfileSkeleton />}>
-        <ProfileContent userId={data.user.id} />
+        {/* The email comes from the verified session, never from the
+            profiles row — it is Neon Auth's fact about this account, and
+            this app has no copy of it to drift from. */}
+        <ProfileContent userId={data.user.id} email={data.user.email} />
       </Suspense>
       {/* Sign-out lived in AppHeader's dropdown, which the redesign
           removed. It belongs on the profile screen, not in the nav bar:

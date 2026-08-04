@@ -23,11 +23,15 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { DatePickerField } from "@/components/DatePickerField";
+import { RequiredFieldLabel, RequiredLegend } from "@/components/RequiredMark";
 import { cn } from "@/lib/utils";
 import { todayIsoDate } from "@/lib/date";
+import { focusFirstInvalidField } from "@/lib/form-focus";
 import { routes } from "@/lib/routes";
 import { reportNetworkFailure } from "@/lib/pwa/use-online-status";
 import {
+  EMPTY_SESSION_MESSAGE,
   MIN_MEASURED_ON,
   maxAllowedMeasuredOn,
 } from "@/lib/measurement-session-input";
@@ -104,6 +108,29 @@ const MEASUREMENT_WILL_BE_REMOVED_MESSAGE = "Cette mesure sera retirée.";
 
 const CREATE_SUCCESS_MESSAGE = "Session enregistrée";
 const EDIT_SUCCESS_MESSAGE = "Modifications enregistrées";
+
+// The two client-side refusals. Both were previously only enforced by
+// the server, so the way a user discovered either was a round trip that
+// came back with a message below the fold. Neither replaces the server
+// check (AGENTS.md: every payload is validated server-side regardless) —
+// they only stop a submission that is already known to be refused.
+const DATE_REQUIRED_MESSAGE = "Indiquez la date de la session.";
+
+// The id of the first field the "au moins une mesure" error points at.
+// The weight is the one measurement every session in this app is
+// expected to carry, so it is where the eye should land.
+const FIRST_MEASUREMENT_FIELD_ID = WEIGHT_ENTRY.kind;
+
+// Field ids in the order they appear ON SCREEN — what
+// focusFirstInvalidField walks to decide which problem to scroll to.
+// Derived from the same catalog slices the JSX renders, so a reordered
+// form can never leave this list describing the previous layout.
+const FIELD_ORDER: readonly string[] = [
+  "measuredOn",
+  WEIGHT_ENTRY.kind,
+  ...MENSURATIONS_ENTRIES.map((entry) => entry.kind),
+  ...COMPOSITION_ENTRIES.map((entry) => entry.kind),
+];
 
 type MeasurementValues = Record<MeasurementKind, string>;
 
@@ -272,6 +299,41 @@ export function MeasurementSessionForm(props: MeasurementSessionFormProps) {
       return;
     }
 
+    // The client-side gate. Runs before the request, never instead of the
+    // server's own validation (AGENTS.md) — it exists so the two refusals
+    // the form can already see coming don't cost a round trip, and so the
+    // problem is scrolled into view rather than left below the fold.
+    // Errors are written into the SAME state the server's 400 populates,
+    // so there is one rendering of "this field is wrong", not two.
+    const clientFieldErrors: Record<string, string[]> = {};
+    const clientFormErrors: string[] = [];
+
+    if (measuredOn.trim() === "") {
+      clientFieldErrors.measuredOn = [DATE_REQUIRED_MESSAGE];
+    }
+    const hasAnyMeasurement = MEASUREMENT_CATALOG.some(
+      (entry) => values[entry.kind].trim() !== "",
+    );
+    if (!hasAnyMeasurement) {
+      clientFormErrors.push(EMPTY_SESSION_MESSAGE);
+    }
+
+    if (
+      Object.keys(clientFieldErrors).length > 0 ||
+      clientFormErrors.length > 0
+    ) {
+      setErrors({
+        fieldErrors: clientFieldErrors,
+        formErrors: clientFormErrors,
+      });
+      focusFirstInvalidField(FIELD_ORDER, (fieldId) =>
+        fieldId === "measuredOn"
+          ? clientFieldErrors.measuredOn !== undefined
+          : fieldId === FIRST_MEASUREMENT_FIELD_ID && clientFormErrors.length > 0,
+      );
+      return;
+    }
+
     setSubmitting(true);
     setErrors(null);
     setSessionExpired(false);
@@ -302,6 +364,13 @@ export function MeasurementSessionForm(props: MeasurementSessionFormProps) {
       if (response.status === 400) {
         const body = (await response.json()) as SubmissionErrors;
         setErrors(body);
+        // Same treatment as a client-side refusal: the server's verdict
+        // is no less worth scrolling to, and on a form this tall the
+        // refused field is routinely off-screen when the button isn't.
+        focusFirstInvalidField(
+          FIELD_ORDER,
+          (fieldId) => body.fieldErrors?.[fieldId] !== undefined,
+        );
         return;
       }
 
@@ -435,21 +504,34 @@ export function MeasurementSessionForm(props: MeasurementSessionFormProps) {
       className="flex flex-col gap-6"
       noValidate
     >
+      <RequiredLegend />
+
       <Field data-invalid={dateFieldErrors ? true : undefined}>
-        <FieldLabel htmlFor="measuredOn">Date</FieldLabel>
-        <Input
+        <RequiredFieldLabel htmlFor="measuredOn">Date</RequiredFieldLabel>
+        <DatePickerField
           id="measuredOn"
-          name="measuredOn"
-          type="date"
-          className="h-11 text-base md:text-sm"
           // Client-side courtesy only (review finding 1): the server
           // (src/lib/measurement-session-input.ts) stays the sole
           // authority on this window and re-validates it regardless.
           min={MIN_MEASURED_ON}
           max={maxAllowedMeasuredOn(new Date())}
-          aria-invalid={dateFieldErrors ? true : undefined}
+          invalid={dateFieldErrors !== undefined}
           value={measuredOn}
-          onChange={(event) => setMeasuredOn(event.target.value)}
+          onChange={(isoDate) => {
+            setMeasuredOn(isoDate);
+            // Clear this field's error as soon as it's answered, the
+            // same way every measurement field drops its prefill marker
+            // on input — a stale red border under a now-valid value is
+            // the form lying about its own state.
+            setErrors((previous) => {
+              if (previous?.fieldErrors.measuredOn === undefined) {
+                return previous;
+              }
+              const fieldErrors = { ...previous.fieldErrors };
+              delete fieldErrors.measuredOn;
+              return { ...previous, fieldErrors };
+            });
+          }}
         />
         <FieldError
           errors={dateFieldErrors?.map((message) => ({ message }))}
@@ -501,13 +583,18 @@ export function MeasurementSessionForm(props: MeasurementSessionFormProps) {
         </Alert>
       )}
 
+      {/* The label names what this submission actually does. It read
+          "Enregistrer la session" in both modes, which on the edit screen
+          described the wrong action — the session already exists. */}
       <Button type="submit" className="h-11 w-full" disabled={submitting}>
         {submitting ? (
           <>
             <Spinner aria-label="Chargement" /> Enregistrement…
           </>
-        ) : (
+        ) : props.mode === "create" ? (
           "Enregistrer la session"
+        ) : (
+          "Modifier la session"
         )}
       </Button>
     </form>

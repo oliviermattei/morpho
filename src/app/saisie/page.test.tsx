@@ -70,7 +70,7 @@ describe("SaisiePage", () => {
     expect(digest).toMatch(/^NEXT_REDIRECT;.*\/auth\/sign-in/);
   });
 
-  it("renders the h1 and the back link to / without waiting on the database", async () => {
+  it("renders the h1 and the shared header, without waiting on the database", async () => {
     getAuthMock.mockReturnValue({
       getSession: vi.fn().mockResolvedValue({
         data: {
@@ -89,9 +89,10 @@ describe("SaisiePage", () => {
       screen.getByRole("heading", { name: "Nouvelle session" }),
     ).toBeInTheDocument();
 
-    const backLink = screen.getByRole("link", { name: "‹ Retour" });
-    expect(backLink).toHaveAttribute("href", "/");
-    expect(backLink.className).toMatch(/min-h-11/);
+    // The "‹ Retour" link is gone: BottomNav is mounted on every screen,
+    // so a second way to leave the page only competed with the bar.
+    expect(screen.queryByRole("link", { name: "‹ Retour" })).toBeNull();
+    expect(screen.getByText("Saisie")).toBeInTheDocument();
   });
 
   // Plan task 3: the page level of the loader wiring — passes only the

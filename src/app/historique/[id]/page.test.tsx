@@ -101,7 +101,7 @@ describe("/historique/[id] page", () => {
     expect(digest).toMatch(/^NEXT_HTTP_ERROR_FALLBACK;404/);
   });
 
-  it("renders the back link, the date reminder and the form pre-filled with the recorded values", async () => {
+  it("renders the form pre-filled with the recorded values, with the date only in the picker", async () => {
     authed(USER_A);
     getDbMock.mockReturnValue(DB_STUB);
     getSessionForUserMock.mockResolvedValue({
@@ -115,16 +115,15 @@ describe("/historique/[id] page", () => {
     const element = await SessionEditPage(paramsFor(VALID_ID));
     render(element);
 
-    const backLink = screen.getByRole("link", { name: "‹ Historique" });
-    expect(backLink).toHaveAttribute("href", "/historique");
+    expect(screen.queryByRole("link", { name: "‹ Historique" })).toBeNull();
 
-    expect(screen.getByText(/1 août 2026/)).toBeInTheDocument();
     expect(
       (screen.getByLabelText("Poids (kg)") as HTMLInputElement).value,
     ).toBe("82,4");
-    expect(
-      (screen.getByLabelText("Date") as HTMLInputElement).value,
-    ).toBe("2026-08-01");
+    // The date is shown ONCE, by the picker itself — the read-only line
+    // that used to repeat it under the title is gone.
+    expect(screen.getByLabelText("Date")).toHaveTextContent("1 août 2026");
+    expect(screen.getAllByText(/1 août 2026/)).toHaveLength(1);
   });
 
   it("reads the session for the segment id and the verified user's own id, never a client-controlled one", async () => {

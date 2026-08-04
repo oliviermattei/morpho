@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { SEX_LABELS, SEX_VALUES } from "@/lib/onboarding";
+import { DatePickerField } from "@/components/DatePickerField";
+import { EARLIEST_START_DATE, SEX_LABELS, SEX_VALUES } from "@/lib/onboarding";
 import type { ProfileSex } from "@/lib/profile";
 import { cn } from "@/lib/utils";
 
@@ -186,17 +187,14 @@ export function OnboardingForm({
         <FieldLabel htmlFor="transformationStartedOn">
           Début de la transformation
         </FieldLabel>
-        <Input
+        <DatePickerField
           id="transformationStartedOn"
-          name="transformationStartedOn"
-          type="date"
-          className="h-11 text-base md:text-sm"
-          aria-invalid={
-            fieldErrors.transformationStartedOn ? true : undefined
-          }
+          // Same floor the server applies (makeStartDateSchema).
+          min={EARLIEST_START_DATE}
+          invalid={fieldErrors.transformationStartedOn !== undefined}
           disabled={isSaving}
           value={startedOn}
-          onChange={(event) => setStartedOn(event.target.value)}
+          onChange={setStartedOn}
         />
         <FieldDescription>
           Le point de départ du compteur de jours.
