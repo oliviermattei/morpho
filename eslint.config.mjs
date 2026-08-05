@@ -1,10 +1,20 @@
+import { createRequire } from "node:module";
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
+// eslint-config-next sets `settings.react.version` to "detect", which
+// eslint-plugin-react resolves through `context.getFilename()` — an API ESLint
+// 10 removed, so every rule throws before a single file is linted. Reading the
+// installed version here hands the plugin the answer detection would have
+// produced, without the removed call. Remove once eslint-plugin-react ships a
+// release supporting ESLint 10 (its 7.37.5 still declares `eslint: ^…|| ^9.7`).
+const reactVersion = createRequire(import.meta.url)("react/package.json").version;
+
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  { settings: { react: { version: reactVersion } } },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

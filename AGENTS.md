@@ -85,7 +85,8 @@ ADRs are immutable and referenced by number. Numbers already taken are listed be
 | 019 | framing — email + password replaces the magic link |
 | 020 | framing — redesign: drawn silhouette, bottom nav, mandatory onboarding |
 | 021 | historique — share a session as plain text |
-| 022+ | free — take the next unused number. |
+| 022 | framing — TypeScript 6 rather than 7, ESLint 10 |
+| 023+ | free — take the next unused number. |
 
 ## Naming & language
 
