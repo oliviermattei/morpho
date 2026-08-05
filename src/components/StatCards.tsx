@@ -44,7 +44,7 @@ function DeltaPill({ entry }: { entry: ViewEntry }) {
       ? "bg-progress-favorable/10 text-progress-favorable"
       : entry.verdict === "adverse"
         ? "bg-progress-adverse/10 text-progress-adverse"
-        : "bg-muted text-muted-foreground";
+        : "bg-muted text-foreground";
 
   return (
     <p

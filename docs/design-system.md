@@ -161,30 +161,12 @@ Convention transversale (s07) : deux formats, jamais un troisième, tous deux en
 
 ### Silhouette et progression
 
-- Le sens « favorable » est **déclaré par mesure** dans le domaine. Il ne se déduit jamais du signe du delta : une taille qui baisse et un biceps qui monte sont deux progrès.
-
-**Déclaration complète, arrêtée avec l'utilisateur** — c'est la table que le domaine implémente, et la seule source :
-
-| Mesure | Favorable quand | Origine |
-|---|---|---|
-| `biceps_cm` | ↑ monte | circonférence de muscle — on veut du volume |
-| `thigh_cm` | ↑ monte | idem |
-| `shoulders_cm` | ↑ monte | idem |
-| `calf_cm` | ↑ monte | idem |
-| `chest_cm` | ↓ baisse | circonférence de gras dans ce contexte |
-| `waist_cm` | ↓ baisse | idem |
-| `hips_cm` | ↓ baisse | idem |
-| `weight_kg` | ↓ baisse | objectif du PRD : perte de poids |
-| `body_fat_pct` | ↓ baisse | découle du précédent |
-| `muscle_pct` | ↑ monte | contrepartie de la masse grasse |
-
-**L'IMC n'a pas de direction déclarée** (s06, décision 5). Ce n'est pas un `kind` de la table ci-dessus — cette table a été *arrêtée avec l'utilisateur* mesure par mesure, et l'IMC n'y a jamais figuré. Il s'affiche donc **neutre** : valeur, delta signé, mais **aucun glyphe et aucune couleur de progression**, tant qu'une décision explicite ne lui en donne pas une.
-
-La règle des circonférences n'est pas « monte = bien » ni « baisse = bien » : elle sépare **les zones où le volume est du muscle** (bras, cuisse, épaules, mollet) de **celles où il est du gras** (poitrine, taille, hanches). Le poids et les deux pourcentages ne sont pas des circonférences et suivent l'objectif du PRD.
-- La couleur ne porte **jamais** l'information seule. Chaque zone affiche sa valeur et son delta signé (`-4,2 cm`).
-- **Le signe ne suffit pas à porter le verdict.** Première rédaction de ce document : « le delta signé suffit, la couleur ne fait que renforcer ». C'était faux — `-4,2 cm` est un progrès au tour de taille et un recul au biceps, donc le signe seul est ambigu dès que le sens favorable varie par mesure. Un lecteur avec une déficience rouge-vert (≈ 8 % des hommes) ne peut pas trancher. Le delta est donc **précédé d'un glyphe qui qualifie le verdict, pas le sens du chiffre** : `▲` progrès, `▼` recul, aucun glyphe si le delta est nul. Une légende sous la silhouette explicite les deux glyphes. Pas d'icône lucide ici : un glyphe typographique évite d'ouvrir le sujet des icônes.
-- Delta exactement nul → affiché sans signe et sans glyphe, en `--muted-foreground` : ce n'est ni un progrès ni un recul.
-- Zone sans donnée → `--muted`, aucun delta, aucune couleur de progression.
+- **Une seule règle de couleur, pour toutes les mesures** (décidée avec l'utilisateur, en remplacement de la table « sens favorable par mesure ») : la valeur **baisse → vert** (`--progress-favorable`), la valeur **monte → rouge** (`--progress-adverse`), la valeur **ne bouge pas → texte normal** (`--foreground`). Pas de cas par cas : un biceps qui monte est rouge comme un tour de taille qui monte.
+- Implémentée en un seul endroit : `verdictForDelta` (`src/lib/measurements.ts`). Le verdict est calculé sur le delta **arrondi à la décimale affichée**, jamais sur le delta brut — sinon `-0,04` s'afficherait « 0,0 cm » dans une couleur de progression.
+- **L'IMC suit la même règle.** Il n'a plus de statut particulier : la décision 5 de s06 (« l'IMC est toujours neutre ») n'existait que parce qu'il ne figurait pas dans la table par mesure, et cette table a disparu.
+- La couleur ne porte **jamais** l'information seule. Chaque zone affiche sa valeur et son delta signé (`-4,2 cm`), formaté avec `signDisplay: "exceptZero"` — le signe suffit maintenant à lire le sens, puisque le sens et le verdict coïncident. Pas de glyphe `▲`/`▼` : ils qualifiaient un verdict qui pouvait contredire le signe, ce qui n'arrive plus.
+- Delta exactement nul → affiché sans signe, en `--foreground` : ni progrès ni recul.
+- Zone sans donnée → `--muted-foreground`, aucun delta, aucune couleur de progression.
 - Zone avec une seule mesure → valeur affichée, pas de delta, pas de couleur : il n'y a rien à comparer.
 
 ### Graphes
@@ -202,7 +184,7 @@ La règle des circonférences n'est pas « monte = bien » ni « baisse = bien �
 - ✅ Vérifier chaque écran en clair **et** en sombre, et à 375 px de large en portrait.
 - ✅ Signaler un *design system gap* quand le besoin n'est pas couvert, et mettre à jour ce document — c'est une décision, pas une improvisation.
 - ❌ Pas de couleur en dur (`#0E7C6B`, `text-green-500`), pas de valeur arbitraire (`p-[13px]`, `text-[13px]`).
-- ❌ Pas de `delta < 0 ? vert : rouge`. Le sens favorable est une propriété de la mesure.
+- ❌ Pas de règle de couleur locale à un composant : le verdict vient de `verdictForDelta`, une seule fois pour toutes les mesures.
 - ❌ Pas d'information portée par la seule couleur.
 - ❌ Pas de seconde famille typographique, pas de police importée.
 - ❌ Pas de composant UI écrit à la main quand le registre shadcn en a un.

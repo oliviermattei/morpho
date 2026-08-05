@@ -95,7 +95,7 @@ describe("buildBodyMapView — zone states (criteria 4, 5, 6)", () => {
   });
 });
 
-describe("buildBodyMapView — BMI (decision 5: always neutral, derived, never stored)", () => {
+describe("buildBodyMapView — BMI (derived, never stored)", () => {
   it("no height -> the IMC is neither computed nor approximated", () => {
     const view = buildBodyMapView(
       { weight_kg: { measurementId: "m-first", value: 90 } },
@@ -136,7 +136,7 @@ describe("buildBodyMapView — BMI (decision 5: always neutral, derived, never s
     expect(view.bmi.verdict).toBe("neutral");
   });
 
-  it("height and two weigh-ins -> IMC delta computed at constant height, via two computeBmi calls, always neutral", () => {
+  it("height and two weigh-ins -> IMC delta computed at constant height, via two computeBmi calls", () => {
     const view = buildBodyMapView(
       { weight_kg: { measurementId: "m-first", value: 90 } },
       { weight_kg: { measurementId: "m-last", value: 78.4 } },
@@ -147,17 +147,18 @@ describe("buildBodyMapView — BMI (decision 5: always neutral, derived, never s
     expect(view.bmi.state).toBe("compared");
     expect(view.bmi.valueText).toBe("24,7");
     expect(view.bmi.deltaText).toBe("-3,7");
-    expect(view.bmi.verdict).toBe("neutral");
+    expect(view.bmi.verdict).toBe("favorable");
   });
 
-  it("never carries a color-progress verdict, even when the underlying weight delta is large", () => {
+  // The IMC follows the same single colour rule as every measurement:
+  // a rising IMC is adverse, like a rising anything else.
+  it("verdicts adverse when the IMC rises", () => {
     const view = buildBodyMapView(
-      { weight_kg: { measurementId: "m-first", value: 120 } },
-      { weight_kg: { measurementId: "m-last", value: 70 } },
+      { weight_kg: { measurementId: "m-first", value: 70 } },
+      { weight_kg: { measurementId: "m-last", value: 120 } },
       178,
     );
 
-    expect(view.bmi.verdict).toBe("neutral");
-    expect(["favorable", "adverse"]).not.toContain(view.bmi.verdict);
+    expect(view.bmi.verdict).toBe("adverse");
   });
 });

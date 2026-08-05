@@ -4,10 +4,10 @@ import { deltaLineClasses, thirdLine } from "./measurement-display";
 import type { ViewEntry } from "./body-map-view";
 
 describe("deltaLineClasses", () => {
-  it("colours a verdict, and falls back to muted for neutral or absent", () => {
+  it("colours a verdict, plain text for a zero delta, muted when absent", () => {
     expect(deltaLineClasses("favorable")).toBe("text-progress-favorable");
     expect(deltaLineClasses("adverse")).toBe("text-progress-adverse");
-    expect(deltaLineClasses("neutral")).toBe("text-muted-foreground");
+    expect(deltaLineClasses("neutral")).toBe("text-foreground");
     expect(deltaLineClasses(null)).toBe("text-muted-foreground");
   });
 });

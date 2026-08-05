@@ -5,6 +5,7 @@ import {
   MEASUREMENT_CATALOG,
   formatMeasurementDelta,
   formatMeasurementValue,
+  verdictForDelta,
   type MeasurementKind,
   type MeasurementVerdict,
 } from "./measurements";
@@ -36,8 +37,8 @@ const NONE_ENTRY: ViewEntry = {
  * Plan s06 task 4, decision 19: `buildBodyMapView` and
  * src/lib/measurements.ts's formatMeasurementDelta are the ONLY two
  * places in the repo allowed to assign a `verdict` — this function never
- * computes one itself, it only recopies what formatMeasurementDelta
- * returns (measurements) or hardcodes "neutral" (BMI, decision 5).
+ * writes its own rule, it only recopies what formatMeasurementDelta
+ * returns (measurements) or calls the same shared verdictForDelta (BMI).
  *
  * Pure: no database access, no `db` parameter — first/last/heightCm
  * arrive already read (src/lib/db/body-map.ts).
@@ -95,9 +96,10 @@ function buildMeasurementEntry(
  * The IMC is derived here (computeBmi/formatBmi, s04 — never
  * poids/taille² written a second time) from the SAME weight boundaries
  * every other read in this module already has, at a constant height.
- * Decision 5: always "neutral" once a value exists — the IMC is not a
- * `kind` in the design system's favorable-direction table, so it never
- * gets a favorable/adverse verdict.
+ * It follows the same single colour rule as every measurement (down is
+ * favorable, up is adverse, unchanged is neutral) — decision 5's "the
+ * IMC is always neutral" existed only because the IMC was absent from
+ * the per-kind favorable-direction table, and that table is gone.
  */
 function buildBmiEntry(
   first: BoundaryMap,
@@ -136,5 +138,10 @@ function buildBmiEntry(
     maximumFractionDigits: 1,
   });
 
-  return { state: "compared", valueText, deltaText, verdict: "neutral" };
+  return {
+    state: "compared",
+    valueText,
+    deltaText,
+    verdict: verdictForDelta(delta),
+  };
 }

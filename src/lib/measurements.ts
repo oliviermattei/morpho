@@ -26,15 +26,6 @@ export type MeasurementGroup = "poids" | "mensurations" | "composition";
 export type MeasurementUnit = "kg" | "cm" | "%";
 
 /**
- * Whether a rising or a falling value is progress, per s06 task 1 —
- * recopied verbatim from docs/design-system.md §Silhouette et
- * progression, "arrêtée avec l'utilisateur". Never inferred from a
- * delta's sign: `-4,2 cm` is progress at the waist and a setback at the
- * biceps.
- */
-export type FavorableDirection = "up" | "down";
-
-/**
  * Where a tracked measurement's zone sits on the silhouette (s06 task 1,
  * decision 2 and 20): recopied from docs/designs/s06-body-map.md's
  * geometry section. `top` is a percentage of the body-map container's
@@ -58,7 +49,6 @@ export interface MeasurementCatalogEntry {
   unit: MeasurementUnit;
   min: number;
   max: number;
-  favorable: FavorableDirection;
   bodyMapZone?: BodyMapZoneGeometry;
 }
 
@@ -89,7 +79,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "kg",
     min: 20,
     max: 400,
-    favorable: "down",
   },
   {
     kind: "shoulders_cm",
@@ -98,7 +87,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 60,
     max: 200,
-    favorable: "up",
     bodyMapZone: { label: "Épaules", column: "left", top: 1 },
   },
   {
@@ -108,7 +96,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 50,
     max: 200,
-    favorable: "down",
     bodyMapZone: { label: "Poitrine", column: "left", top: 20 },
   },
   {
@@ -125,7 +112,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 40,
     max: 200,
-    favorable: "down",
     bodyMapZone: { label: "Taille", column: "right", top: 30 },
   },
   {
@@ -135,7 +121,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 50,
     max: 200,
-    favorable: "down",
     bodyMapZone: { label: "Hanches", column: "left", top: 43 },
   },
   {
@@ -145,7 +130,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 25,
     max: 120,
-    favorable: "up",
     bodyMapZone: { label: "Cuisse", column: "right", top: 56 },
   },
   {
@@ -155,7 +139,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 15,
     max: 80,
-    favorable: "up",
     bodyMapZone: { label: "Mollet", column: "left", top: 74 },
   },
   {
@@ -165,7 +148,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "cm",
     min: 15,
     max: 80,
-    favorable: "up",
     bodyMapZone: { label: "Biceps", column: "right", top: 9 },
   },
   {
@@ -175,7 +157,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "%",
     min: 1,
     max: 70,
-    favorable: "down",
   },
   {
     kind: "muscle_pct",
@@ -184,7 +165,6 @@ export const MEASUREMENT_CATALOG: readonly MeasurementCatalogEntry[] = [
     unit: "%",
     min: 10,
     max: 90,
-    favorable: "up",
   },
 ];
 
@@ -331,19 +311,32 @@ export interface MeasurementDeltaResult {
 }
 
 /**
+ * The colour rule for every measurement, at the user's request: a value
+ * that goes DOWN is favorable (green), a value that goes UP is adverse
+ * (red), an unchanged value is neutral (plain text). The per-kind
+ * "favorable direction" table this used to consult (up for the biceps,
+ * down for the waist) is gone — one rule now, no case-by-case.
+ *
+ * Rounds FIRST (one decimal, matching what formatFrenchNumber displays),
+ * THEN qualifies the rounded result. Named trap: a raw delta of -0.04
+ * displays "0,0 cm" — qualified on the raw value it would render neutral
+ * text in a coloured pill on the same millimeter of screen.
+ */
+export function verdictForDelta(delta: number): MeasurementVerdict {
+  // Same rounding rule as formatFrenchNumber's own halfExpand default
+  // (round half away from zero), computed independently so the verdict
+  // always agrees with what the text actually shows.
+  const roundedDelta =
+    (Math.sign(delta) * Math.round(Math.abs(delta) * 10)) / 10;
+  if (roundedDelta === 0) return "neutral";
+  return roundedDelta < 0 ? "favorable" : "adverse";
+}
+
+/**
  * Plan s06 task 2, decision 19: one of only two places in the repo
  * allowed to assign a `verdict` (the other is src/lib/body-map-view.ts,
- * which only ever recopies what this function returns — it never
- * recomputes one). `delta < 0 ? favorable : adverse` never appears here:
- * the verdict is read from the kind's declared `favorable` direction.
- *
- * Rounds FIRST (one decimal, signDisplay "exceptZero", through
- * formatFrenchNumber — no second Intl.NumberFormat instance anywhere in
- * the repo), THEN qualifies the rounded result. Decision 6's named trap:
- * a raw delta of -0.04 displays "0,0 cm" — if the verdict were computed
- * on the raw -0.04 instead of the rounded 0, the zone would render
- * neutral text in a favorable/adverse fill color on the same millimeter
- * of screen.
+ * which only ever recopies what this function returns or calls
+ * verdictForDelta above — it never writes its own rule).
  */
 export function formatMeasurementDelta(
   kind: MeasurementKind,
@@ -357,19 +350,5 @@ export function formatMeasurementDelta(
     maximumFractionDigits: 1,
   })}${separator}${entry.unit}`;
 
-  // Same rounding rule as formatFrenchNumber's own halfExpand default
-  // (round half away from zero), computed independently so the verdict
-  // always agrees with what the text above actually shows.
-  const roundedDelta = (Math.sign(delta) * Math.round(Math.abs(delta) * 10)) / 10;
-
-  let verdict: MeasurementVerdict;
-  if (roundedDelta === 0) {
-    verdict = "neutral";
-  } else if (entry.favorable === "up") {
-    verdict = roundedDelta > 0 ? "favorable" : "adverse";
-  } else {
-    verdict = roundedDelta < 0 ? "favorable" : "adverse";
-  }
-
-  return { text, verdict };
+  return { text, verdict: verdictForDelta(delta) };
 }

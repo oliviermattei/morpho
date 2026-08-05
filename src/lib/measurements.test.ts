@@ -50,7 +50,6 @@ describe("MEASUREMENT_CATALOG", () => {
       unit: "kg",
       min: 20,
       max: 400,
-      favorable: "down",
     });
   });
 
@@ -72,38 +71,13 @@ describe("MEASUREMENT_CATALOG", () => {
       unit: "%",
       min: 1,
       max: 70,
-      favorable: "down",
     });
   });
 });
 
-// Plan s06 task 1: the favorable direction is a declared table, never
-// inferred from a delta's sign (design-system.md §Silhouette et
-// progression) — recopied here verbatim from the design system, and
-// iterated over the Drizzle enum so a measurement kind added later can't
-// pass unnoticed without a declared direction.
-describe("MEASUREMENT_CATALOG — favorable direction (s06 task 1)", () => {
-  const EXPECTED_FAVORABLE: Record<string, "up" | "down"> = {
-    weight_kg: "down",
-    shoulders_cm: "up",
-    chest_cm: "down",
-    biceps_cm: "up",
-    waist_cm: "down",
-    hips_cm: "down",
-    thigh_cm: "up",
-    calf_cm: "up",
-    body_fat_pct: "down",
-    muscle_pct: "up",
-  };
-
-  it.each(measurementKind.enumValues)(
-    "declares the design system's favorable direction for %s",
-    (kind) => {
-      const entry = MEASUREMENT_CATALOG.find((candidate) => candidate.kind === kind);
-      expect(entry?.favorable).toBe(EXPECTED_FAVORABLE[kind]);
-    },
-  );
-});
+// The per-kind favorable direction is gone (user request): one colour
+// rule for every measurement — down is favorable, up is adverse,
+// unchanged is neutral. See verdictForDelta below.
 
 // Plan s06 task 1: the 7 body-map zones carry their column and vertical
 // position (recopied from docs/designs/s06-body-map.md), the 3 off-body
@@ -350,17 +324,15 @@ describe("formatMeasurementValueForInput", () => {
   );
 });
 
-// Plan s06 task 2, decision 19: formatMeasurementDelta is one of the only
-// two places in the repo allowed to assign a verdict — it rounds first,
-// then qualifies the ROUNDED result against the kind's declared favorable
-// direction. Never `delta < 0 ? favorable : adverse`.
+// formatMeasurementDelta is one of the only two places in the repo
+// allowed to assign a verdict — it rounds first, then qualifies the
+// ROUNDED result. One rule for every kind, at the user's request: down
+// is favorable, up is adverse, unchanged is neutral.
 describe("formatMeasurementDelta (s06 task 2)", () => {
-  // The matrix decision 6 names verbatim: three signs, two verdicts —
-  // the sign alone never determines the verdict.
   it.each([
     ["waist_cm", -7.4, "favorable"],
-    ["biceps_cm", 1.2, "favorable"],
-    ["biceps_cm", -4.2, "adverse"],
+    ["biceps_cm", -4.2, "favorable"],
+    ["biceps_cm", 1.2, "adverse"],
     ["hips_cm", 0.6, "adverse"],
   ] as const)("%s with a delta of %s verdicts %s", (kind, delta, verdict) => {
     expect(formatMeasurementDelta(kind, delta).verdict).toBe(verdict);

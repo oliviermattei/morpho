@@ -26,15 +26,18 @@ import type { MeasurementVerdict } from "./measurements";
  * exactly the misreading it was supposed to prevent.
  *
  * What is left is the split the screen actually needs: the sign says
- * which way the number moved, the colour says whether that is good for
- * this particular measurement — down is favorable for a weight, up is
- * favorable for a biceps (the `favorable` direction declared per kind in
+ * which way the number moved, the colour says the same thing for every
+ * measurement without exception — vert quand ça descend, rouge quand ça
+ * monte, texte normal quand ça ne bouge pas (verdictForDelta in
  * src/lib/measurements.ts).
  */
 export function deltaLineClasses(verdict: MeasurementVerdict | null): string {
   if (verdict === "favorable") return "text-progress-favorable";
   if (verdict === "adverse") return "text-progress-adverse";
-  return "text-muted-foreground";
+  // "neutral" is a real delta of zero and reads as plain text; a null
+  // verdict is "Aucune mesure" / "1 mesure" — a state, not a delta, and
+  // it stays muted.
+  return verdict === "neutral" ? "text-foreground" : "text-muted-foreground";
 }
 
 export function thirdLine(entry: ViewEntry): string {
