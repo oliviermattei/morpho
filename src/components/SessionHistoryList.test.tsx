@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { SessionHistoryList } from "./SessionHistoryList";
 
 describe("SessionHistoryList — empty state", () => {
@@ -176,10 +176,12 @@ describe("SessionHistoryList — the IMC suffix (task 9)", () => {
   });
 });
 
-// s09 plan task 9, R9/D1: each row opens the edit screen — a Link
-// wrapping the whole Item (asChild), "Modifier" as plain text (never a
-// nested interactive control: no second AlertDialog trigger, no
-// ItemActions button, which would force this Server Component client).
+// s09 plan task 9, R9/D1, amended by ADR 021: each row still opens the
+// edit screen and "Modifier" is still gone, but the row is no longer an
+// Item-as-Link — it now also carries a share button, so the link is
+// stretched and the two controls sit side by side. What R9 refused is
+// unchanged: no destructive control here, and no client boundary on this
+// file (the share button is a leaf island of its own).
 describe("SessionHistoryList — openable rows (s09 task 9)", () => {
   const sessions = [
     {
@@ -198,7 +200,7 @@ describe("SessionHistoryList — openable rows (s09 task 9)", () => {
     expect(link).toHaveAttribute("href", "/historique/session-1");
   });
 
-  it("carries no nested interactive element — the whole row is the single link", () => {
+  it("nests neither control inside the other — one link, one share button, side by side", () => {
     render(<SessionHistoryList sessions={sessions} heightCm={null} />);
 
     const item = document.querySelector('[data-slot="item"]') as HTMLElement;
@@ -206,11 +208,32 @@ describe("SessionHistoryList — openable rows (s09 task 9)", () => {
     // and it is decorative (aria-hidden), so the row's accessible name
     // stays the session's date alone.
     expect(within(item).queryByText("Modifier")).toBeNull();
-    // asChild merges the Link's own <a> into the Item's root node — the
-    // whole row IS the single link, never a second one nested inside it.
-    expect(item.tagName).toBe("A");
-    expect(item.querySelectorAll("a")).toHaveLength(0);
-    expect(item.querySelectorAll("button")).toHaveLength(0);
+
+    // ADR 021: the row is no longer `<Item asChild>` around a Link — a
+    // <button> inside an <a> is invalid HTML. Exactly one of each, and
+    // neither contains the other.
+    const links = item.querySelectorAll("a");
+    const buttons = item.querySelectorAll("button");
+    expect(item.tagName).toBe("DIV");
+    expect(links).toHaveLength(1);
+    expect(buttons).toHaveLength(1);
+    expect(links[0]?.contains(buttons[0] as Node)).toBe(false);
+    expect(buttons[0]?.contains(links[0] as Node)).toBe(false);
+  });
+
+  // The whole card stays tappable even though the <a> now wraps only the
+  // date: a stretched ::after over the positioned Item is what carries
+  // it. Asserted on the classes, since jsdom computes no layout.
+  it("stretches the link over the whole positioned row", () => {
+    render(<SessionHistoryList sessions={sessions} heightCm={null} />);
+
+    const item = document.querySelector('[data-slot="item"]') as HTMLElement;
+    expect(item.className).toMatch(/\brelative\b/);
+    const link = within(item).getByRole("link", {
+      name: /dimanche 2 août 2026/,
+    });
+    expect(link.className).toMatch(/after:absolute/);
+    expect(link.className).toMatch(/after:inset-0/);
   });
 
   it("stays a Server Component — no client boundary leaks up from this file", () => {
@@ -219,5 +242,88 @@ describe("SessionHistoryList — openable rows (s09 task 9)", () => {
       "utf8",
     );
     expect(source).not.toContain('"use client"');
+  });
+});
+
+// ADR 021: one share control per session, naming its own session — with
+// several rows on screen, "Partager" alone would give every button the
+// same accessible name.
+describe("SessionHistoryList — sharing a session (ADR 021)", () => {
+  const sessions = [
+    {
+      id: "session-1",
+      measuredOn: "2026-08-02",
+      measurements: [{ kind: "weight_kg" as const, value: 82.4 }],
+    },
+    {
+      id: "session-2",
+      measuredOn: "2026-07-01",
+      measurements: [{ kind: "biceps_cm" as const, value: 34 }],
+    },
+  ];
+
+  it("gives every row a share button named after its own date", () => {
+    render(<SessionHistoryList sessions={sessions} heightCm={null} />);
+
+    expect(
+      screen.getByRole("button", {
+        name: "Partager la session du dimanche 2 août 2026",
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: "Partager la session du mercredi 1 juillet 2026",
+      }),
+    ).toBeInTheDocument();
+  });
+
+  // The shared text is built server-side from the very row being
+  // rendered — including the IMC, which only exists once a height is
+  // known. Read back through the button's own click, the one path a user
+  // has to it.
+  it("shares exactly the values the row displays, IMC included", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    // Defined on the real navigator rather than through vi.stubGlobal:
+    // jsdom ships no `clipboard` at all, and replacing the whole
+    // navigator object would take the rest of the DOM's own with it.
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+
+    render(
+      <SessionHistoryList
+        heightCm={175}
+        sessions={[
+          {
+            id: "session-1",
+            measuredOn: "2026-08-02",
+            measurements: [
+              { kind: "weight_kg", value: 72.4 },
+              { kind: "biceps_cm", value: 34 },
+            ],
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "Partager la session du dimanche 2 août 2026",
+      }),
+    );
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        [
+          "Mesures du dimanche 2 août 2026",
+          "Poids : 72,4 kg",
+          "Biceps : 34 cm",
+          "IMC : 23,6",
+        ].join("\n"),
+      );
+    });
+
+    Reflect.deleteProperty(navigator, "clipboard");
   });
 });
