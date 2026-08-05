@@ -19,16 +19,27 @@ By participating you agree to abide by our
 
 ## How this repo works
 
-morpho is built **spec-first**. A feature travels through
+morpho is built **spec-first**, but only where that pays for itself. There are
+two lanes, and the size of the change picks the lane.
+
+**Small changes go straight to `main`** — bug fixes, copy and styling tweaks,
+refactors with no behaviour change, dependency bumps, docs, tests. No plan, no
+branch, no pull request for maintainers. The bar is `npm run check` passing and
+a Conventional Commits message.
+
+**Big changes go through the pipeline.** A feature travels through
 `docs/prd.md` → `docs/stories.md` → `docs/plans/<story-id>.md` → code →
 `docs/reviews/`. Architectural choices are recorded as ADRs in
-`docs/decisions/`.
+`docs/decisions/`. Use this lane for a new screen or flow, a schema or
+migration change, anything touching auth or a route handler's security surface,
+an ADR-worthy decision, or a change spanning many files.
 
-You do not have to write a full plan for a typo fix or a docs correction. But
-for anything that changes behaviour, **open an issue first** and describe the
-intent; a maintainer will tell you whether it needs a story and a plan. A large
-PR that arrives with no agreed spec is likely to need reworking, which is
-nobody's idea of fun.
+**Outside contributors always use a fork and a pull request** — the direct-to-
+`main` lane is a maintainer shortcut, not an invitation to push. For anything
+that changes behaviour, **open an issue first** and describe the intent; a
+maintainer will tell you whether it needs a story and a plan. A large PR that
+arrives with no agreed spec is likely to need reworking, which is nobody's idea
+of fun.
 
 ADR numbers are immutable and never reused — check the table in `AGENTS.md`
 and take the next unused number, mentioning it in the issue so parallel work
@@ -142,6 +153,12 @@ Common types: `feat`, `fix`, `docs`, `refactor`, `perf`, `test`, `build`, `ci`,
 `chore`. Example: `feat(charts): add body-fat reference line`.
 
 ## Pull requests
+
+Maintainers: a small change does not need one. Commit it to `main` once
+`npm run check` is green. Open a PR when the change is big enough to be worth
+reviewing as a whole — see [How this repo works](#how-this-repo-works).
+
+Everyone else:
 
 1. Fork the repo and create a branch from `main`.
 2. Keep commits focused; keep the PR focused.

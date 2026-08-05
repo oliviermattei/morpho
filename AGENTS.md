@@ -10,6 +10,28 @@ The changes that bite in this project: `middleware.ts` is renamed **`proxy.ts`**
 
 Personal PWA for tracking weight and body measurements. See `docs/architecture.md` for the full architecture and `docs/decisions/` for why each choice was made.
 
+## Workflow — two speeds
+
+The project has a single maintainer, so ceremony is scaled to risk, not to policy.
+
+**Small change → commit straight to `main`.** No branch, no pull request, no plan.
+This covers bug fixes, copy and styling tweaks, refactors with no behaviour
+change, dependency bumps, docs, and tests. The bar is `npm run check` passing
+and a Conventional Commits message. Push when it's green.
+
+**Big change → branch + pull request, planned first in `docs/plans/`.** Use this
+lane when the change:
+
+- adds or reshapes a user-facing feature (a new screen, a new flow),
+- touches the database schema or a migration,
+- touches auth, session handling, or a route handler's security surface,
+- makes an architectural choice worth an ADR,
+- spans many files and is easier to review as a whole than as a diff on `main`.
+
+When in doubt, the safe default is the branch. But don't open a pull request
+just to merge it yourself five minutes later — that's the case this split
+exists to kill.
+
 ## Stack
 
 Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind v4 · shadcn/ui (base radix, preset radix-nova, lucide) · Neon Postgres via Drizzle · Neon Auth, email + mot de passe (**beta**) · Zod · Recharts (charts) · Serwist (PWA) · Vitest + Testing Library · Playwright.
