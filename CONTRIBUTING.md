@@ -21,8 +21,8 @@ By participating you agree to abide by our
 
 morpho is built **spec-first**. A feature travels through
 `docs/prd.md` → `docs/stories.md` → `docs/plans/<story-id>.md` → code →
-`docs/reviews/`. A plan is implemented only once it says `validated: yes`, and
-architectural choices are recorded as ADRs in `docs/decisions/`.
+`docs/reviews/`. Architectural choices are recorded as ADRs in
+`docs/decisions/`.
 
 You do not have to write a full plan for a typo fix or a docs correction. But
 for anything that changes behaviour, **open an issue first** and describe the
@@ -30,8 +30,9 @@ intent; a maintainer will tell you whether it needs a story and a plan. A large
 PR that arrives with no agreed spec is likely to need reworking, which is
 nobody's idea of fun.
 
-ADR numbers are allocated centrally (see the table in `AGENTS.md`) — claim
-yours in the issue before writing, so parallel work doesn't collide.
+ADR numbers are immutable and never reused — check the table in `AGENTS.md`
+and take the next unused number, mentioning it in the issue so parallel work
+doesn't collide.
 
 ## Ways to contribute
 

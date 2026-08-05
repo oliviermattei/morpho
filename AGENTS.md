@@ -8,15 +8,11 @@ The changes that bite in this project: `middleware.ts` is renamed **`proxy.ts`**
 
 # morpho
 
-Personal PWA for tracking weight and body measurements. Built through the killer-saas pipeline — the pipeline rules, `/ks-*` commands and templates live in the `multitool` repo (`~/www/multitool`), not here. See `docs/architecture.md` for the full architecture and `docs/decisions/` for why each choice was made.
-
-**No direct coding.** Every feature goes through the pipeline: a story only gets implemented once `docs/plans/<id>.md` says `validated: yes`.
+Personal PWA for tracking weight and body measurements. See `docs/architecture.md` for the full architecture and `docs/decisions/` for why each choice was made.
 
 ## Stack
 
-Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind v4 · shadcn/ui (base radix, preset radix-nova, lucide) · Neon Postgres via Drizzle · Neon Auth, email + mot de passe (**beta**) · Zod · Vitest + Testing Library · Playwright.
-
-Recharts (charts, s07) and `@serwist/turbopack` (PWA, s10) are decided but deliberately not installed yet — they arrive with the story that uses them.
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript strict · Tailwind v4 · shadcn/ui (base radix, preset radix-nova, lucide) · Neon Postgres via Drizzle · Neon Auth, email + mot de passe (**beta**) · Zod · Recharts (charts) · Serwist (PWA) · Vitest + Testing Library · Playwright.
 
 ## Rules that override convenience
 
@@ -33,7 +29,7 @@ Recharts (charts, s07) and `@serwist/turbopack` (PWA, s10) are decided but delib
 ## Layout
 
 ```
-docs/          killer-saas pipeline (prd, stories, architecture, decisions, plans, reviews)
+docs/          prd, stories, architecture, decisions (ADRs), plans, reviews
 drizzle/       generated SQL migrations — versioned, never hand-edited
 src/app/       routes, layouts, route handlers (api/)
 src/components/    app components · ui/ = generated shadcn primitives
@@ -55,7 +51,7 @@ Set `E2E_EMAIL` and `E2E_PASSWORD` in `.env.local` (a real account on the Neon A
 
 ## ADR numbering
 
-ADRs are immutable and referenced by number, so numbers are allocated centrally rather than claimed by whoever writes first — parallel plans collide otherwise.
+ADRs are immutable and referenced by number. Numbers already taken are listed below; never reuse or renumber one.
 
 | Range | Owner |
 |---|---|
@@ -66,7 +62,7 @@ ADRs are immutable and referenced by number, so numbers are allocated centrally 
 | 012–018 | s05–s10 |
 | 019 | framing — email + password replaces the magic link |
 | 020 | framing — redesign: drawn silhouette, bottom nav, mandatory onboarding |
-| 021+ | free. Claim your numbers in your plan before writing, and say so. |
+| 021+ | free — take the next unused number. |
 
 ## Naming & language
 

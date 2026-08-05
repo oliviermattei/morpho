@@ -80,6 +80,10 @@ if (typeof globalThis.IntersectionObserver === "undefined") {
   class IntersectionObserverStub implements IntersectionObserver {
     readonly root = null;
     readonly rootMargin = "";
+    // Added to the spec after rootMargin, and required by the DOM lib defs
+    // from TypeScript 7 on. Same empty value as rootMargin: the stub
+    // observes nothing, so no margin it reports can matter.
+    readonly scrollMargin = "";
     readonly thresholds: readonly number[] = [];
     observe() {}
     unobserve() {}
