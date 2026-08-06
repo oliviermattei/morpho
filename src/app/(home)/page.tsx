@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getBodyMapData } from "@/lib/db/body-map";
 import { buildBodyMapView } from "@/lib/body-map-view";
-import { deriveTransformationPhase } from "@/lib/home-summary";
 import { daysSince } from "@/lib/onboarding";
 import { requireOnboarded } from "@/lib/onboarding-gate";
 import { routes } from "@/lib/routes";
@@ -53,10 +52,7 @@ export default async function Home() {
     );
     return (
       <>
-        <HomeHeader
-          days={daysSince(profile.transformationStartedOn)}
-          phase="no-measurement"
-        />
+        <HomeHeader days={daysSince(profile.transformationStartedOn)} />
         <main className="flex flex-1 flex-col gap-6 px-4 py-6 pb-28">
           <Empty className="border">
             <EmptyHeader>
@@ -88,10 +84,6 @@ export default async function Home() {
     bodyMapData.last,
     bodyMapData.heightCm,
   );
-  const phase = deriveTransformationPhase(
-    bodyMapData.first.weight_kg,
-    bodyMapData.last.weight_kg,
-  );
   // Criterion 9 (s06): "no session" means no measurement session ever
   // recorded — distinct from the auth session. `last` is empty exactly
   // when this user has never recorded a single kind.
@@ -99,10 +91,7 @@ export default async function Home() {
 
   return (
     <>
-      <HomeHeader
-        days={daysSince(profile.transformationStartedOn)}
-        phase={phase}
-      />
+      <HomeHeader days={daysSince(profile.transformationStartedOn)} />
       {/* pb-28 clears the fixed BottomNav — without it the last card
           sits permanently under the bar and can never be scrolled into
           view. */}

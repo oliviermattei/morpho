@@ -128,5 +128,6 @@ export function daysSince(
 }
 
 export function formatDayCounter(days: number): string {
-  return `J+${days}`;
+  if (days === 1) return "1er jour";
+  return `${days}eme jour`;
 }

@@ -140,8 +140,10 @@ describe("daysSince", () => {
 });
 
 describe("formatDayCounter", () => {
-  it("renders the J+N form the header shows", () => {
-    expect(formatDayCounter(42)).toBe("J+42");
-    expect(formatDayCounter(0)).toBe("J+0");
+  it("formats the day counter as an ordinal in French", () => {
+    expect(formatDayCounter(1)).toBe("1er jour");
+    expect(formatDayCounter(0)).toBe("0eme jour");
+    expect(formatDayCounter(42)).toBe("42eme jour");
+    expect(formatDayCounter(139)).toBe("139eme jour");
   });
 });

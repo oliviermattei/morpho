@@ -1,5 +1,4 @@
 import { formatDayCounter } from "@/lib/onboarding";
-import { PHASE_LABELS, type TransformationPhase } from "@/lib/home-summary";
 import { OfflineBanner } from "./OfflineBanner";
 
 /**
@@ -10,33 +9,22 @@ import { OfflineBanner } from "./OfflineBanner";
  *
  * OfflineBanner moves with it, unchanged: s10 mounted it "right under
  * the header", and that is still where it is.
+ *
+ * The transformation phase used to sit under the day counter. It is gone
+ * — a second line of status the screen's own numbers already tell — and
+ * with it the `phase` prop. `deriveTransformationPhase` and PHASE_LABELS
+ * still exist in lib/home-summary.ts, now with no caller.
  */
-export function HomeHeader({
-  days,
-  phase,
-}: {
-  days: number;
-  phase: TransformationPhase;
-}) {
+export function HomeHeader({ days }: { days: number }) {
   return (
     <>
       <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-2.5">
         <span className="text-xl font-bold tracking-tight text-foreground">
           morpho
         </span>
-        {/* "J+42 depuis le début" — the counter alone never said what it
-            counted from, and "J+42 · Stabilisation" read as though the
-            two halves were one measurement. The phase moves to its own
-            line so neither has to be abbreviated on a narrow phone. */}
-        <p className="flex flex-col items-end text-xs leading-tight text-muted-foreground">
-          <span>
-            <span className="font-bold text-foreground">
-              {formatDayCounter(days)}
-            </span>{" "}
-            depuis le début
-          </span>
-          <span>{PHASE_LABELS[phase]}</span>
-        </p>
+        <span className="text-xs font-bold text-foreground">
+          {formatDayCounter(days)}
+        </span>
       </header>
       <OfflineBanner />
     </>
