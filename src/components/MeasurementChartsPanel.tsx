@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Carousel,
   CarouselContent,
@@ -31,6 +32,7 @@ import { formatTargetGap, isTargetReached, weightGapKg } from "@/lib/target-weig
 import { cn } from "@/lib/utils";
 import type { BmiSeriesResult } from "@/lib/db/measurement-series";
 import type { SeriesPoint } from "@/lib/measurement-series";
+import { LazyVisible } from "./LazyVisible";
 import { MeasurementChart } from "./MeasurementChart";
 
 export interface MeasurementChartsPanelProps {
@@ -201,12 +203,24 @@ function MeasureCard({
               </div>
             )}
 
-            <MeasurementChart
-              series={series}
-              seriesLabel={entry.label}
-              formatValue={entry.formatValue}
-              targetWeightKg={targetWeightKg}
-            />
+            {/* The chart is built when it comes near the viewport, not
+                at page load: eleven Recharts instances mounted at once to
+                show the two that fit on a phone is most of that work
+                wasted. The placeholder carries the SAME aspect-video as
+                ChartContainer, so revealing a chart never shifts what is
+                below it. */}
+            <LazyVisible
+              fallback={
+                <Skeleton className="aspect-video w-full rounded-lg" />
+              }
+            >
+              <MeasurementChart
+                series={series}
+                seriesLabel={entry.label}
+                formatValue={entry.formatValue}
+                targetWeightKg={targetWeightKg}
+              />
+            </LazyVisible>
 
             <p className="text-xs text-muted-foreground">
               {series.length === 1
@@ -307,42 +321,37 @@ export function MeasurementChartsPanel({
   return (
     <div className="flex flex-col gap-8">
       <section aria-label="Poids et indices" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold text-muted-foreground">
-            Poids et indices
-          </h2>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-9"
-              aria-label="Mesure précédente"
-              onClick={() => api?.scrollPrev()}
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="size-9"
-              aria-label="Mesure suivante"
-              onClick={() => api?.scrollNext()}
-            >
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </Button>
-          </div>
-        </div>
+        <h2 className="text-lg font-semibold text-foreground">
+          Poids et indices
+        </h2>
 
         {/* `loop: true` is the "carousel infini": past the last index the
             next swipe returns to the weight instead of hitting a wall.
             No startIndex is passed — index 0 already IS the weight (see
             WEIGHT_AND_INDICES_ENTRIES above). */}
-        <Carousel opts={{ loop: true, align: "start" }} setApi={setApi}>
-          <CarouselContent>
+        {/* The 4px bleed is what makes the slide's card look like the
+            mensuration cards below it.
+
+            Card draws its outline as an OUTSET ring (shadow-sm, `0 0 0
+            1px`), which lives outside its box — and stock shadcn sizes a
+            slide so its card lands flush with the carousel viewport on
+            all four sides. `overflow-hidden` on that viewport then clips
+            the ring away entirely, so the weight card read as borderless
+            next to identical cards that kept theirs.
+
+            So the clip is widened by 4px each way (-mx-1 on the root)
+            and the slide is padded back by the same 4px (pl-5/pr-1 over
+            the base pl-4, py-1 for the vertical edges). The card ends up
+            at exactly the same x and width as the cards below — only the
+            clip moved, leaving the ring inside it. */}
+        <Carousel
+          opts={{ loop: true, align: "start" }}
+          setApi={setApi}
+          className="-mx-1"
+        >
+          <CarouselContent className="py-1">
             {WEIGHT_AND_INDICES_ENTRIES.map((entry) => (
-              <CarouselItem key={entry.id}>
+              <CarouselItem key={entry.id} className="pl-5 pr-1">
                 <MeasureCard
                   entry={entry}
                   series={seriesFor(entry.id)}
@@ -360,6 +369,42 @@ export function MeasurementChartsPanel({
               </CarouselItem>
             ))}
           </CarouselContent>
+
+          {/* Straddling the card's own border, halfway in and halfway
+              out, level with the chart.
+
+              `left-1` / `right-1` land on the card's edge — the root is
+              the 4px-bleed box above, so 4px in from it IS the border —
+              and the half-translate then centres each button on that
+              line. `top-1/2` puts them at the card's midpoint, which is
+              where the plot sits on every slide.
+
+              size-8 rather than the size-9 these were in the header, and
+              that size is load-bearing: centred on the border, a 32px
+              button reaches exactly 16px inside — precisely CardContent's
+              own horizontal padding, so its inner edge lands on the
+              plot's outer edge and never covers it. Growing them back to
+              size-9 would put them over the axis. */}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="absolute top-1/2 left-1 z-10 size-8 -translate-x-1/2 -translate-y-1/2 rounded-full"
+            aria-label="Mesure précédente"
+            onClick={() => api?.scrollPrev()}
+          >
+            <ChevronLeft className="size-4" aria-hidden="true" />
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="absolute top-1/2 right-1 z-10 size-8 translate-x-1/2 -translate-y-1/2 rounded-full"
+            aria-label="Mesure suivante"
+            onClick={() => api?.scrollNext()}
+          >
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </Button>
         </Carousel>
 
         {/* Position indicator, and a control in its own right. On a
@@ -392,7 +437,7 @@ export function MeasurementChartsPanel({
       </section>
 
       <section aria-label="Mensurations" className="flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground">
+        <h2 className="text-lg font-semibold text-foreground">
           Mensurations
         </h2>
         <div className="flex flex-col gap-4">

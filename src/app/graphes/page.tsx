@@ -66,9 +66,15 @@ function ReadErrorState() {
 function GraphesShell({ children }: { children: React.ReactNode }) {
   return (
     <>
-    <PageHeader title="Graphes" />
+    {/* No title: "Poids et indices" and "Mensurations" name this screen
+        better than a label repeating what BottomNav already highlights. */}
+    <PageHeader />
     <main className="flex flex-1 flex-col gap-6 px-4 py-6 pb-28">
-      <h1 className="text-lg font-semibold text-foreground">Évolution</h1>
+      {/* Kept for the document outline, not for the eye: the two section
+          headings below now carry this size, and a visible "Évolution"
+          above them only repeated what the screen already shows. A page
+          with no h1 at all would leave those sections dangling. */}
+      <h1 className="sr-only">Évolution</h1>
       {children}
     </main>
     {/* ADR 020: the same bar as every other screen. Outside <main> so

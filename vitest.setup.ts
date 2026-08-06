@@ -69,23 +69,54 @@ if (typeof window !== "undefined") {
 
 // Same gap, same component, one layer further in: Embla constructs an
 // IntersectionObserver while initialising (SlidesInView), and jsdom
-// implements none. The stub observes nothing and reports nothing, which
-// leaves every slide "not in view" — harmless for these tests, which
-// assert on the rendered cards, not on Embla's own visibility bookkeeping.
+// implements none.
 //
-// Deliberately NOT the ResizeObserver polyfill s07's plan refuses for
-// ChartContainer (P5): that one would have faked a LAYOUT the assertions
-// then depended on. This only makes the component mount at all.
+// This stub REPORTS EVERY OBSERVED TARGET AS INTERSECTING, and that is a
+// deliberate change from the silent version it replaces. Silence was
+// harmless while the only consumer was Embla's visibility bookkeeping,
+// which no test asserts on. It stopped being harmless the moment
+// LazyVisible started gating real content on an intersection: a stub that
+// never fires leaves every chart a placeholder for ever, and every SVG
+// assertion in this repo fails against a page of skeletons.
+//
+// "Everything is in view" is also the only honest answer available here.
+// jsdom computes no layout and has no viewport, so there is no geometry
+// from which a target could be OUT of view — same reasoning as the
+// ResizeObserver stub below, which reports a declared size rather than
+// staying silent and leaving Recharts waiting for ever.
+//
+// Still not the polyfill s07's P5 refuses: nothing here fakes a layout
+// that an assertion then depends on. It reports presence, not position.
 if (typeof globalThis.IntersectionObserver === "undefined") {
   class IntersectionObserverStub implements IntersectionObserver {
     readonly root = null;
     readonly rootMargin = "";
     // Added to the spec after rootMargin, and required by the DOM lib defs
-    // from TypeScript 7 on. Same empty value as rootMargin: the stub
-    // observes nothing, so no margin it reports can matter.
+    // from TypeScript 7 on. Empty like rootMargin: with no viewport there
+    // is no margin for either of them to widen.
     readonly scrollMargin = "";
     readonly thresholds: readonly number[] = [];
-    observe() {}
+
+    constructor(private readonly callback: IntersectionObserverCallback) {}
+
+    observe(target: Element) {
+      const rect = target.getBoundingClientRect();
+      const entry = {
+        target,
+        isIntersecting: true,
+        intersectionRatio: 1,
+        time: 0,
+        boundingClientRect: rect,
+        intersectionRect: rect,
+        rootBounds: null,
+      } as IntersectionObserverEntry;
+      // Synchronously, inside observe(): callers reach this from an
+      // effect, so the resulting React update stays inside the act()
+      // scope Testing Library already opened. A queueMicrotask here would
+      // land after act() closes and warn on every single render.
+      this.callback([entry], this);
+    }
+
     unobserve() {}
     disconnect() {}
     takeRecords(): IntersectionObserverEntry[] {

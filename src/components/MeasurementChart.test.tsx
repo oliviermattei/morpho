@@ -102,10 +102,27 @@ describe("MeasurementChart — axis ticks are formatted dates, never a raw epoch
   });
 });
 
-// (e) P8 — the Y axis is never anchored to zero on a series that
-// doesn't need it.
-describe("MeasurementChart — Y axis is never anchored to zero (P8)", () => {
-  it("no Y axis tick reads 0 for a 74-78 series, and the lowest tick sits near 74", () => {
+// (e) The Y axis is anchored at zero, on every measure.
+//
+// This inverts s07's P8, which anchored the axis at the data so a
+// 74-78kg series would fill the plot. The trade-off was re-judged: a
+// point's height should mean its magnitude, and a series that barely
+// moves should look like one. The cost is accepted, not overlooked — a
+// 74-78 series now renders as a nearly flat line high in the plot, which
+// is exactly what these assertions pin down.
+describe("MeasurementChart — the Y axis is anchored at zero", () => {
+  function yAxisTicks(container: HTMLElement): number[] {
+    // Recharts renders every axis's tick labels in their own
+    // `.recharts-{axis}-tick-labels` group, a sibling of the axis's own
+    // line/tick-line group — not nested inside it.
+    return Array.from(
+      container.querySelectorAll(
+        ".recharts-yAxis-tick-labels .recharts-cartesian-axis-tick-value",
+      ),
+    ).map((node) => Number(node.textContent));
+  }
+
+  it("starts the Y axis at 0 for a 74-78 series rather than at the minimum", () => {
     const series = [
       { t: Date.UTC(2026, 0, 1), value: 74 },
       { t: Date.UTC(2026, 1, 1), value: 76 },
@@ -116,18 +133,28 @@ describe("MeasurementChart — Y axis is never anchored to zero (P8)", () => {
       <MeasurementChart series={series} seriesLabel="Poids" formatValue={formatKg} />,
     );
 
-    // Recharts renders every axis's tick labels in their own
-    // `.recharts-{axis}-tick-labels` group, a sibling of the axis's own
-    // line/tick-line group — not nested inside it.
-    const yAxisTicks = Array.from(
-      container.querySelectorAll(
-        ".recharts-yAxis-tick-labels .recharts-cartesian-axis-tick-value",
-      ),
-    ).map((node) => Number(node.textContent));
+    const ticks = yAxisTicks(container);
+    expect(ticks.length).toBeGreaterThan(0);
+    expect(Math.min(...ticks)).toBe(0);
+  });
 
-    expect(yAxisTicks.length).toBeGreaterThan(0);
-    expect(yAxisTicks).not.toContain(0);
-    expect(Math.min(...yAxisTicks)).toBeGreaterThan(70);
+  // Not just the weight: the same rule on a mensuration, whose values
+  // sit in a narrow band far from zero.
+  it("starts at 0 for a mensuration series too", () => {
+    const series = [
+      { t: Date.UTC(2026, 0, 1), value: 108 },
+      { t: Date.UTC(2026, 1, 1), value: 114 },
+    ];
+
+    const { container } = render(
+      <MeasurementChart
+        series={series}
+        seriesLabel="Taille"
+        formatValue={(value) => `${value} cm`}
+      />,
+    );
+
+    expect(Math.min(...yAxisTicks(container))).toBe(0);
   });
 });
 
@@ -282,9 +309,11 @@ describe("MeasurementChart — target weight reference line (s08 task 7)", () =>
   // insideTopLeft (text below the line) instead of the default
   // insideBottomLeft (text above it).
   it("flips the label position to insideTopLeft when the target sits in the domain's top quarter", () => {
-    // Series 70-71, target 72: weightChartDomain([70,71,72]) with a 1kg
-    // margin -> [69, 73], a 4kg span. The target (72) sits at (72-69)/4 =
-    // 0.75 -> exactly the top quarter boundary.
+    // Series 70-71, target 72 -> weightChartDomain gives [0, 73]. The
+    // target sits at 72/73 = 0.99 of the span. Since the axis was
+    // anchored at zero this is the ORDINARY case for a real target: a
+    // weight objective is always close to the weights measured, so it is
+    // always near the ceiling of a zero-based domain.
     const series = [
       { t: Date.UTC(2026, 0, 1), value: 70 },
       { t: Date.UTC(2026, 1, 1), value: 71 },
@@ -312,9 +341,14 @@ describe("MeasurementChart — target weight reference line (s08 task 7)", () =>
   });
 
   it("keeps the default insideBottomLeft position (dy 0em) when the target sits in the lower part of the domain", () => {
+    // The other branch, and it takes an extreme fixture to reach now: a
+    // 305kg series with a 60kg target -> domain [0, 306], target at 0.20
+    // of the span. Kept because the branch is still live — a target far
+    // under the measured weights is exactly when the label has room
+    // above the line — not because this shape is common.
     const series = [
-      { t: Date.UTC(2026, 0, 1), value: 74 },
-      { t: Date.UTC(2026, 1, 1), value: 76 },
+      { t: Date.UTC(2026, 0, 1), value: 300 },
+      { t: Date.UTC(2026, 1, 1), value: 305 },
     ];
 
     const { container } = render(
@@ -322,7 +356,7 @@ describe("MeasurementChart — target weight reference line (s08 task 7)", () =>
         series={series}
         seriesLabel="Poids"
         formatValue={formatKg}
-        targetWeightKg={70}
+        targetWeightKg={60}
       />,
     );
 

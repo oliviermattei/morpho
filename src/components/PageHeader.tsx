@@ -17,14 +17,19 @@ import { OfflineBanner } from "./OfflineBanner";
  * shared by reproducing three attributes, not by adding a props union to
  * make one component serve both.
  */
-export function PageHeader({ title }: { title: string }) {
+export function PageHeader({ title }: { title?: string }) {
   return (
     <>
       <header className="flex items-center justify-between gap-3 px-5 pt-4 pb-2.5">
         <span className="text-xl font-bold tracking-tight text-foreground">
           morpho
         </span>
-        <span className="text-xs text-muted-foreground">{title}</span>
+        {/* Optional: BottomNav already marks which screen you are on, so
+            a screen whose identity is obvious from its content can drop
+            the label rather than say it twice. */}
+        {title && (
+          <span className="text-xs text-muted-foreground">{title}</span>
+        )}
       </header>
       <OfflineBanner />
     </>

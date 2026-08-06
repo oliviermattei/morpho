@@ -74,8 +74,16 @@ export function MeasurementChart({
           targetWeightKg,
         )
       : undefined;
-  const yAxisDomain: [string, string] | [number, number] =
-    computedTargetDomain ?? ["auto", "auto"];
+  // Zero-based on every measure, weight included. s07's P8 anchored the
+  // axis at the data instead ("auto") precisely to avoid flattening a
+  // 74-78kg series into a hairline — that reading of the trade-off is
+  // now reversed on purpose: a point's height should mean its magnitude,
+  // and a curve that barely moves should LOOK like a curve that barely
+  // moves. Recharts' own default is [0, 'auto'] anyway, but it is spelled
+  // out here rather than left implicit, like every other axis prop in
+  // this file (ADR 017).
+  const yAxisDomain: [number, string] | [number, number] =
+    computedTargetDomain ?? [0, "auto"];
 
   return (
     <ChartContainer config={config}>

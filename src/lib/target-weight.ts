@@ -60,13 +60,19 @@ export function isTargetReached(gapKg: number): boolean {
 
 /**
  * Plan task 4, decision 20 (trap 1): the Y axis domain the weight chart
- * uses WHEN a target is set — s07's own `['auto','auto']` default stays
- * untouched otherwise (undefined here means "don't override"). Spans
- * both the series values and the target with a flat 1kg margin, floored/
- * ceiled to an integer: without the target folded into min/max, a
- * reference line's default overflow behaviour discards it entirely the
- * moment it sits outside the measured range — the normal case at the
- * start of an objective, not an edge case to shrug off.
+ * uses WHEN a target is set (undefined here means "don't override").
+ * The target is folded into the max because a reference line's default
+ * overflow behaviour discards it entirely the moment it sits outside the
+ * measured range — the normal case at the start of an objective, not an
+ * edge case to shrug off.
+ *
+ * The floor is 0, not `min - 1`. Every chart in the app now starts its Y
+ * axis at zero so the height of a point reads as its actual magnitude —
+ * the same rule for the weight, the mensurations and the indices, chosen
+ * deliberately over the tighter window s07's P8 argued for. The cost is
+ * real and known: a series that only moves within a few percent of its
+ * own value (a waist between 108 and 114) renders as a nearly flat line
+ * near the top, because that IS what a zero-based axis says about it.
  */
 export function weightChartDomain(
   values: readonly number[],
@@ -75,10 +81,8 @@ export function weightChartDomain(
   if (targetKg === null || values.length === 0) {
     return undefined;
   }
-  const withTarget = [...values, targetKg];
-  const min = Math.min(...withTarget);
-  const max = Math.max(...withTarget);
-  return [Math.floor(min - 1), Math.ceil(max + 1)];
+  const max = Math.max(...values, targetKg);
+  return [0, Math.ceil(max + 1)];
 }
 
 const { min: TARGET_WEIGHT_MIN_KG, max: TARGET_WEIGHT_MAX_KG } =

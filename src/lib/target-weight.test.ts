@@ -88,28 +88,32 @@ describe("weightChartDomain", () => {
     expect(weightChartDomain([], 70)).toBeUndefined();
   });
 
-  it("expands the domain to include a target far BELOW every measurement", () => {
-    expect(weightChartDomain([70, 72, 74], 50)).toEqual([49, 75]);
+  // The floor is zero on every chart in the app, so a target under the
+  // measured range needs no widening — it is already inside.
+  it("always floors the domain at zero, whatever the values", () => {
+    expect(weightChartDomain([70, 72, 74], 50)![0]).toBe(0);
+    expect(weightChartDomain([300, 310], 305)![0]).toBe(0);
+    expect(weightChartDomain([20.5], 20)![0]).toBe(0);
   });
 
-  it("expands the domain to include a target far ABOVE every measurement", () => {
-    expect(weightChartDomain([70, 72, 74], 100)).toEqual([69, 101]);
+  it("raises the ceiling to clear a target far ABOVE every measurement", () => {
+    expect(weightChartDomain([70, 72, 74], 100)).toEqual([0, 101]);
   });
 
-  it("still includes a 1kg margin when the target sits INSIDE the measured range", () => {
-    expect(weightChartDomain([70, 72, 74], 71)).toEqual([69, 75]);
+  it("keeps a 1kg margin above the highest value when the target sits inside the range", () => {
+    expect(weightChartDomain([70, 72, 74], 71)).toEqual([0, 75]);
   });
 
   it("handles a target exactly equal to the minimum measurement", () => {
-    expect(weightChartDomain([70, 72, 74], 70)).toEqual([69, 75]);
+    expect(weightChartDomain([70, 72, 74], 70)).toEqual([0, 75]);
   });
 
   it("handles a target exactly equal to the maximum measurement", () => {
-    expect(weightChartDomain([70, 72, 74], 74)).toEqual([69, 75]);
+    expect(weightChartDomain([70, 72, 74], 74)).toEqual([0, 75]);
   });
 
   it("handles a single-point series", () => {
-    expect(weightChartDomain([74], 72)).toEqual([71, 75]);
+    expect(weightChartDomain([74], 72)).toEqual([0, 75]);
   });
 
   it("the returned domain always contains both the target and every value", () => {
