@@ -43,7 +43,7 @@ describe("BodySilhouette", () => {
       const image = container.querySelector("img");
       expect(image).toHaveAttribute(
         "src",
-        sex === "male" ? "/silhouettes/homme.svg" : "/silhouettes/femme.svg",
+        sex === "male" ? "/silhouettes/man.svg" : "/silhouettes/woman.svg",
       );
       // The drawing carries no information the labels don't — screen
       // readers must not hear "silhouette" seven times.
@@ -81,16 +81,14 @@ describe("BodySilhouette", () => {
     expect(deltaLine?.textContent).toBe("−7,4 cm");
   });
 
-  // Each label needs a line pointing at the body it annotates. One per
-  // zone, not one shared decorative rule.
-  it("draws one dashed leader line per zone", () => {
+  // The dashed lines now live in man.svg / woman.svg. Drawing them here
+  // too would double every one of them.
+  it("draws no leader line of its own — the SVG carries them", () => {
     const { container } = render(
       <BodySilhouette view={EMPTY_VIEW} sex="male" />,
     );
 
-    expect(container.querySelectorAll(".border-dashed")).toHaveLength(
-      ZONE_NAMES.length,
-    );
+    expect(container.querySelectorAll(".border-dashed")).toHaveLength(0);
   });
 
   // The female drawing's hips and calves sit lower than the male one's.
@@ -108,4 +106,32 @@ describe("BodySilhouette", () => {
 
     expect(maleTop).not.toBe(femaleTop);
   });
+
+  // The whole point of the spreading pass. Two labels that overlap are
+  // two unreadable labels, and the drawing puts some of these lines only
+  // 22px apart.
+  it.each(["male", "female"] as const)(
+    "never lets two %s labels overlap in the same column",
+    (sex) => {
+      const { container } = render(<BodySilhouette view={EMPTY_VIEW} sex={sex} />);
+
+      const boxes = Array.from(
+        container.querySelectorAll<HTMLElement>("[data-zone-label]"),
+      ).map((node) => ({
+        side: node.className.includes("left-0") ? "left" : "right",
+        top: Number.parseFloat(node.style.top),
+      }));
+
+      for (const side of ["left", "right"]) {
+        const tops = boxes
+          .filter((box) => box.side === side)
+          .map((box) => box.top)
+          .sort((a, b) => a - b);
+
+        for (let i = 1; i < tops.length; i += 1) {
+          expect(tops[i]! - tops[i - 1]!).toBeGreaterThanOrEqual(56);
+        }
+      }
+    },
+  );
 });

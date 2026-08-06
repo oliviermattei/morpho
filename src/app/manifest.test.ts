@@ -60,8 +60,11 @@ describe("PWA icons (s10 decision 7, task 3)", () => {
       "silhouettes",
     ]);
 
+    // English filenames: the repo is public on GitHub, so the assets are
+    // named in the language the code is written in. Only the vectors —
+    // anything else here is precached into the PWA for nothing.
     const silhouettes = readdirSync(resolve(PUBLIC_DIR, "silhouettes"));
-    expect(silhouettes.sort()).toEqual(["femme.svg", "homme.svg"]);
+    expect(silhouettes.sort()).toEqual(["man.svg", "woman.svg"]);
 
     const iconFiles = readdirSync(ICONS_DIR);
     expect(iconFiles.sort()).toEqual(EXPECTED.map((e) => e.file).sort());
