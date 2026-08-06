@@ -13,6 +13,11 @@ import { withSerwist } from "@serwist/turbopack";
  * (task 5), all three dropped the instant Cache Components is active.
  */
 const nextConfig: NextConfig = {
+  // The dev overlay badge sits bottom-left, exactly where this app's own
+  // chrome lives, and every screenshot of a mobile viewport has it stamped
+  // over the content. Turning it off costs nothing: compile and runtime
+  // errors are still surfaced full-screen, only the idle indicator goes.
+  devIndicators: false,
   headers: async () => [
     {
       source: "/serwist/:path*",
