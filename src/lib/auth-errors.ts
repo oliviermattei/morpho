@@ -38,6 +38,11 @@ export const ERROR_MESSAGES: Record<string, string> = {
     "Trop de tentatives. Réessayez dans quelques minutes.",
   session_expired: "Votre session a expiré. Reconnectez-vous.",
   session_not_found: "Votre session a expiré. Reconnectez-vous.",
+  // Not from the auth server: the app's own route handler returns this
+  // when SIGNUP_ENABLED is off (src/lib/auth-signup.ts). The screen
+  // normally hides the form in that case, so seeing this sentence means
+  // the endpoint was reached some other way.
+  SIGNUP_DISABLED: "La création de compte est désactivée.",
   // Password reset. The token is single-use and short-lived, so "expired"
   // and "already used" are the same dead end for the user and get the same
   // sentence — the only useful next step is to ask for another link.

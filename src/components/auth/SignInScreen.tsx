@@ -84,7 +84,18 @@ const COPY: Record<
   },
 };
 
-export function SignInScreen() {
+/**
+ * `signUpEnabled` comes from the page as a prop rather than being read
+ * here: SIGNUP_ENABLED is a server-side variable with no NEXT_PUBLIC_
+ * prefix (src/lib/auth-signup.ts), so a client component cannot see it.
+ * When it is false the switch link disappears and "sign-up" becomes
+ * unreachable — the route handler refuses the endpoint anyway.
+ */
+export function SignInScreen({
+  signUpEnabled = false,
+}: {
+  signUpEnabled?: boolean;
+}) {
   const router = useRouter();
 
   const [mode, setMode] = useState<Mode>("sign-in");
@@ -317,7 +328,10 @@ export function SignInScreen() {
             </Button>
           </div>
         )}
-        <Button type="submit" className="h-11 w-full" disabled={isPending}>
+        {/* mt-2 on top of the form's gap-4: the submit button is the end
+            of the sequence, not another field in it, and the extra breath
+            keeps it from reading as glued to "Mot de passe oublié ?". */}
+        <Button type="submit" className="mt-6 h-11 w-full" disabled={isPending}>
           {isPending ? (
             <>
               <Spinner aria-label="Chargement" /> {copy.pending}
@@ -327,18 +341,23 @@ export function SignInScreen() {
           )}
         </Button>
       </form>
-      <p className="text-center text-sm text-muted-foreground">
-        {copy.switchPrompt}{" "}
-        <Button
-          type="button"
-          variant="link"
-          className="h-auto p-0 text-sm"
-          disabled={isPending}
-          onClick={() => goToMode(copy.switchTo)}
-        >
-          {copy.switchAction}
-        </Button>
-      </p>
+      {/* From "forgot", the switch back to sign-in always shows — it is the
+          way out of that detour. From sign-in, it only offers account
+          creation when this deployment accepts new accounts. */}
+      {(mode !== "sign-in" || signUpEnabled) && (
+        <p className="text-center text-sm text-muted-foreground">
+          {copy.switchPrompt}{" "}
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 text-sm"
+            disabled={isPending}
+            onClick={() => goToMode(copy.switchTo)}
+          >
+            {copy.switchAction}
+          </Button>
+        </p>
+      )}
     </Fragment>
   );
 }

@@ -164,7 +164,7 @@ describe("SignInScreen", () => {
       }),
     );
     const user = userEvent.setup();
-    render(<SignInScreen />);
+    render(<SignInScreen signUpEnabled />);
 
     await user.click(screen.getByRole("button", { name: "Créer un compte" }));
     await fill(user);
@@ -208,10 +208,44 @@ describe("SignInScreen", () => {
     ).toBeInTheDocument();
   });
 
+  // SIGNUP_ENABLED reaches the screen as this prop. Closed is the default:
+  // the component takes no `signUpEnabled` here on purpose.
+  it("hides the account-creation switch when sign-up is disabled", () => {
+    render(<SignInScreen />);
+
+    expect(
+      screen.queryByRole("button", { name: "Créer un compte" }),
+    ).toBeNull();
+    expect(screen.queryByText("Pas encore de compte ?")).toBeNull();
+  });
+
+  it("shows the account-creation switch when sign-up is enabled", () => {
+    render(<SignInScreen signUpEnabled />);
+
+    expect(
+      screen.getByRole("button", { name: "Créer un compte" }),
+    ).toBeInTheDocument();
+  });
+
+  // Disabling sign-up must not strand anyone inside the reset detour: the
+  // switch back to sign-in is not the one being gated.
+  it("keeps the way back from the reset mode when sign-up is disabled", async () => {
+    const user = userEvent.setup();
+    render(<SignInScreen />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Mot de passe oublié ?" }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Se connecter" }),
+    ).toBeInTheDocument();
+  });
+
   it("switches to sign-up and creates the account, deriving the name from the email", async () => {
     signUpEmailMock.mockResolvedValue({ data: { token: "t" }, error: null });
     const user = userEvent.setup();
-    render(<SignInScreen />);
+    render(<SignInScreen signUpEnabled />);
 
     await user.click(screen.getByRole("button", { name: "Créer un compte" }));
     expect(
@@ -240,7 +274,7 @@ describe("SignInScreen", () => {
       },
     });
     const user = userEvent.setup();
-    render(<SignInScreen />);
+    render(<SignInScreen signUpEnabled />);
 
     await user.click(screen.getByRole("button", { name: "Créer un compte" }));
     await fill(user);
@@ -259,7 +293,7 @@ describe("SignInScreen", () => {
       error: { code: "INVALID_EMAIL_OR_PASSWORD", message: "Invalid" },
     });
     const user = userEvent.setup();
-    render(<SignInScreen />);
+    render(<SignInScreen signUpEnabled />);
 
     await fill(user);
     await user.click(screen.getByRole("button", { name: "Se connecter" }));

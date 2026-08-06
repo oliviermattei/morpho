@@ -26,9 +26,6 @@ export default async function ResetPasswordPage({
         </span>
         <ResetPasswordScreen token={singleToken || null} />
       </div>
-      <p className="mt-auto text-center text-xs text-muted-foreground">
-        Vos mesures restent privées, visibles de vous seul.
-      </p>
     </main>
   );
 }
